@@ -1,0 +1,127 @@
+2026-02-28 15:05:17,123:INFO:Global:Python version 3.11.10 | packaged by Anaconda, Inc. | (main, Oct  3 2024, 07:22:26) [MSC v.1929 64 bit (AMD64)].
+2026-02-28 15:05:17,123:INFO:Global:Parsing debug_reg/sg_treemodel_20260228150517097001.aedt.
+2026-02-28 15:05:17,125:INFO:Global:PyAEDT version 0.14.0.
+2026-02-28 15:05:17,136:INFO:Global:Returning found Desktop session with PID 15188!
+2026-02-28 15:05:41,045:INFO:Global:Project sg_treemodel_20260228150517097001 has been opened.
+2026-02-28 15:05:41,118:INFO:Global:File debug_reg/sg_treemodel_20260228150517097001.aedt correctly loaded. Elapsed time: 0m 24sec
+2026-02-28 15:05:41,726:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:05:41,745:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:05:41,769:INFO:Global:Aedt Objects correctly read
+2026-02-28 15:05:43,491:INFO:Global:Project sg_treemodel_20260228150517097001 Saved correctly
+2026-02-28 15:05:44,366:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:05:44,385:INFO:Global:Solving all design setups.
+2026-02-28 15:07:23,853:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:07:23,867:INFO:Global:Design setup None solved correctly in 0.0h 1.0m 40.0s
+2026-02-28 15:07:24,378:INFO:Global:Project sg_treemodel_20260228150517097001 Saved correctly
+2026-02-28 15:07:24,794:INFO:Global:Parsing c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228150517097001.aedt.
+2026-02-28 15:07:24,854:INFO:Global:File c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228150517097001.aedt correctly loaded. Elapsed time: 0m 0sec
+2026-02-28 15:07:24,877:INFO:Global:aedt file load time 0.07900309562683105
+2026-02-28 15:07:25,011:INFO:Global:PostProcessor class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:07:25,031:INFO:Global:Post class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:07:25,172:INFO:Global:Solution Data Correctly Loaded.
+2026-02-28 15:07:25,244:INFO:Global:Closing the AEDT Project sg_treemodel_20260228150517097001
+2026-02-28 15:07:26,920:INFO:Global:Project sg_treemodel_20260228150517097001 closed correctly
+2026-02-28 15:07:29,418:INFO:Global:Python version 3.11.10 | packaged by Anaconda, Inc. | (main, Oct  3 2024, 07:22:26) [MSC v.1929 64 bit (AMD64)].
+2026-02-28 15:07:29,418:INFO:Global:Parsing debug_reg/sg_treemodel_20260228150729391612.aedt.
+2026-02-28 15:07:29,419:INFO:Global:PyAEDT version 0.14.0.
+2026-02-28 15:07:29,427:INFO:Global:Returning found Desktop session with PID 15188!
+2026-02-28 15:07:38,908:INFO:Global:Project sg_treemodel_20260228150729391612 has been opened.
+2026-02-28 15:07:38,966:INFO:Global:File debug_reg/sg_treemodel_20260228150729391612.aedt correctly loaded. Elapsed time: 0m 10sec
+2026-02-28 15:07:39,570:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:07:39,589:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:07:39,620:INFO:Global:Aedt Objects correctly read
+2026-02-28 15:07:41,073:INFO:Global:Project sg_treemodel_20260228150729391612 Saved correctly
+2026-02-28 15:07:41,956:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:07:41,970:INFO:Global:Solving all design setups.
+2026-02-28 15:09:29,123:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:09:29,139:INFO:Global:Design setup None solved correctly in 0.0h 1.0m 47.0s
+2026-02-28 15:09:29,641:INFO:Global:Project sg_treemodel_20260228150729391612 Saved correctly
+2026-02-28 15:09:29,664:INFO:Global:Parsing c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228150729391612.aedt.
+2026-02-28 15:09:29,746:INFO:Global:File c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228150729391612.aedt correctly loaded. Elapsed time: 0m 0sec
+2026-02-28 15:09:29,759:INFO:Global:aedt file load time 0.10101532936096191
+2026-02-28 15:09:29,871:INFO:Global:PostProcessor class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:09:29,895:INFO:Global:Post class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:09:30,059:INFO:Global:Solution Data Correctly Loaded.
+2026-02-28 15:09:30,104:INFO:Global:Closing the AEDT Project sg_treemodel_20260228150729391612
+2026-02-28 15:09:30,921:INFO:Global:Project sg_treemodel_20260228150729391612 closed correctly
+2026-02-28 15:09:33,490:INFO:Global:Python version 3.11.10 | packaged by Anaconda, Inc. | (main, Oct  3 2024, 07:22:26) [MSC v.1929 64 bit (AMD64)].
+2026-02-28 15:09:33,490:INFO:Global:Parsing debug_reg/sg_treemodel_20260228150933464772.aedt.
+2026-02-28 15:09:33,495:INFO:Global:PyAEDT version 0.14.0.
+2026-02-28 15:09:33,502:INFO:Global:Returning found Desktop session with PID 15188!
+2026-02-28 15:09:43,739:INFO:Global:Project sg_treemodel_20260228150933464772 has been opened.
+2026-02-28 15:09:43,806:INFO:Global:File debug_reg/sg_treemodel_20260228150933464772.aedt correctly loaded. Elapsed time: 0m 10sec
+2026-02-28 15:09:44,398:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:09:44,413:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:09:44,429:INFO:Global:Aedt Objects correctly read
+2026-02-28 15:09:45,796:INFO:Global:Project sg_treemodel_20260228150933464772 Saved correctly
+2026-02-28 15:09:46,645:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:09:46,658:INFO:Global:Solving all design setups.
+2026-02-28 15:12:02,895:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:12:02,907:INFO:Global:Design setup None solved correctly in 0.0h 2.0m 16.0s
+2026-02-28 15:12:03,376:INFO:Global:Project sg_treemodel_20260228150933464772 Saved correctly
+2026-02-28 15:12:03,403:INFO:Global:Parsing c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228150933464772.aedt.
+2026-02-28 15:12:03,485:INFO:Global:File c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228150933464772.aedt correctly loaded. Elapsed time: 0m 0sec
+2026-02-28 15:12:03,506:INFO:Global:aedt file load time 0.10600447654724121
+2026-02-28 15:12:03,605:INFO:Global:PostProcessor class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:12:03,627:INFO:Global:Post class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:12:03,792:INFO:Global:Solution Data Correctly Loaded.
+2026-02-28 15:12:03,870:INFO:Global:Closing the AEDT Project sg_treemodel_20260228150933464772
+2026-02-28 15:12:04,679:INFO:Global:Project sg_treemodel_20260228150933464772 closed correctly
+2026-02-28 15:12:07,385:INFO:Global:Python version 3.11.10 | packaged by Anaconda, Inc. | (main, Oct  3 2024, 07:22:26) [MSC v.1929 64 bit (AMD64)].
+2026-02-28 15:12:07,385:INFO:Global:Parsing debug_reg/sg_treemodel_20260228151207361950.aedt.
+2026-02-28 15:12:07,387:INFO:Global:PyAEDT version 0.14.0.
+2026-02-28 15:12:07,394:INFO:Global:Returning found Desktop session with PID 15188!
+2026-02-28 15:12:16,937:INFO:Global:Project sg_treemodel_20260228151207361950 has been opened.
+2026-02-28 15:12:17,018:INFO:Global:File debug_reg/sg_treemodel_20260228151207361950.aedt correctly loaded. Elapsed time: 0m 10sec
+2026-02-28 15:12:17,582:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:12:17,597:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:12:17,614:INFO:Global:Aedt Objects correctly read
+2026-02-28 15:12:18,997:INFO:Global:Project sg_treemodel_20260228151207361950 Saved correctly
+2026-02-28 15:12:19,903:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:12:19,929:INFO:Global:Solving all design setups.
+2026-02-28 15:14:40,580:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:14:40,594:INFO:Global:Design setup None solved correctly in 0.0h 2.0m 21.0s
+2026-02-28 15:14:41,092:INFO:Global:Project sg_treemodel_20260228151207361950 Saved correctly
+2026-02-28 15:14:41,111:INFO:Global:Parsing c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228151207361950.aedt.
+2026-02-28 15:14:41,202:INFO:Global:File c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228151207361950.aedt correctly loaded. Elapsed time: 0m 0sec
+2026-02-28 15:14:41,230:INFO:Global:aedt file load time 0.10599994659423828
+2026-02-28 15:14:41,339:INFO:Global:PostProcessor class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:14:41,351:INFO:Global:Post class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:14:41,524:INFO:Global:Solution Data Correctly Loaded.
+2026-02-28 15:14:41,572:INFO:Global:Closing the AEDT Project sg_treemodel_20260228151207361950
+2026-02-28 15:14:43,121:INFO:Global:Project sg_treemodel_20260228151207361950 closed correctly
+2026-02-28 15:14:46,005:INFO:Global:Python version 3.11.10 | packaged by Anaconda, Inc. | (main, Oct  3 2024, 07:22:26) [MSC v.1929 64 bit (AMD64)].
+2026-02-28 15:14:46,005:INFO:Global:Parsing debug_reg/sg_treemodel_20260228151445991496.aedt.
+2026-02-28 15:14:46,011:INFO:Global:PyAEDT version 0.14.0.
+2026-02-28 15:14:46,019:INFO:Global:Returning found Desktop session with PID 15188!
+2026-02-28 15:14:56,207:INFO:Global:File debug_reg/sg_treemodel_20260228151445991496.aedt correctly loaded. Elapsed time: 0m 0sec
+2026-02-28 15:14:56,239:INFO:Global:Project sg_treemodel_20260228151445991496 has been opened.
+2026-02-28 15:14:56,893:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:14:56,910:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:14:56,928:INFO:Global:Aedt Objects correctly read
+2026-02-28 15:14:58,318:INFO:Global:Project sg_treemodel_20260228151445991496 Saved correctly
+2026-02-28 15:14:59,206:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:14:59,233:INFO:Global:Solving all design setups.
+2026-02-28 15:16:48,133:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:16:48,147:INFO:Global:Design setup None solved correctly in 0.0h 1.0m 49.0s
+2026-02-28 15:16:48,614:INFO:Global:Project sg_treemodel_20260228151445991496 Saved correctly
+2026-02-28 15:16:48,638:INFO:Global:Parsing c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228151445991496.aedt.
+2026-02-28 15:16:48,720:INFO:Global:File c:/Users/simpl_dz11_2/Desktop/smgp/debug_reg/sg_treemodel_20260228151445991496.aedt correctly loaded. Elapsed time: 0m 0sec
+2026-02-28 15:16:48,743:INFO:Global:aedt file load time 0.10300350189208984
+2026-02-28 15:16:48,868:INFO:Global:PostProcessor class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:16:48,887:INFO:Global:Post class has been initialized! Elapsed time: 0m 0sec
+2026-02-28 15:16:49,055:INFO:Global:Solution Data Correctly Loaded.
+2026-02-28 15:16:49,111:INFO:Global:Closing the AEDT Project sg_treemodel_20260228151445991496
+2026-02-28 15:16:50,012:INFO:Global:Project sg_treemodel_20260228151445991496 closed correctly
+2026-02-28 15:16:52,617:INFO:Global:Python version 3.11.10 | packaged by Anaconda, Inc. | (main, Oct  3 2024, 07:22:26) [MSC v.1929 64 bit (AMD64)].
+2026-02-28 15:16:52,634:INFO:Global:Parsing debug_reg/sg_treemodel_20260228151652608599.aedt.
+2026-02-28 15:16:52,640:INFO:Global:PyAEDT version 0.14.0.
+2026-02-28 15:16:52,648:INFO:Global:Returning found Desktop session with PID 15188!
+2026-02-28 15:17:02,220:INFO:Global:Project sg_treemodel_20260228151652608599 has been opened.
+2026-02-28 15:17:02,257:INFO:Global:File debug_reg/sg_treemodel_20260228151652608599.aedt correctly loaded. Elapsed time: 0m 10sec
+2026-02-28 15:17:02,852:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:17:02,871:INFO:Global:Active Design set to HFSSDesign1
+2026-02-28 15:17:02,898:INFO:Global:Aedt Objects correctly read
+2026-02-28 15:17:04,314:INFO:Global:Project sg_treemodel_20260228151652608599 Saved correctly
+2026-02-28 15:17:05,211:INFO:Global:Key Desktop/ActiveDSOConfigurations/HFSS correctly changed.
+2026-02-28 15:17:05,224:INFO:Global:Solving all design setups.

@@ -1,0 +1,30 @@
+{
+  "model": "TCNN",
+  "model_type": "dual",
+  "dataset": "old_excel",
+  "loss_mode": "ri",
+  "db_weight": 0.0,
+  "slope_weight": 0.0,
+  "passivity_weight": 0.0,
+  "input_columns": [
+    "length of patch",
+    "width of patch",
+    "height of patch",
+    "height of substrate",
+    "height of solder resist layer",
+    "radius of the probe",
+    "c_pad",
+    "c_antipad",
+    "c_probe",
+    "dielectric constant of substrate",
+    "dielectric constant of solder resist layer"
+  ],
+  "target_length": 201,
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_mse": 0.005696176194760483,
+  "device": "cpu",
+  "model_path": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\ablation_dual_ri.pt",
+  "scaler_path": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\ablation_dual_ri.gz"
+}

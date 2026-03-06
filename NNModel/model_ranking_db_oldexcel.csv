@@ -1,0 +1,6 @@
+model,model_type,mean_db_mse,median_db_mse
+antenna_nn,dual,0.3154209852218628,0.027541175484657288
+ablation_dual_db_hybrid_v1.pt,dual,1.096165657043457,0.22782258689403534
+ablation_dual_db_hybrid_v2.pt,dual,1.1117498874664307,0.23413869738578796
+ablation_dual_ri.pt,dual,1.3295035362243652,0.16028888523578644
+ablation_hilbert_ri.pt,hilbert,91.5633544921875,34.0947151184082

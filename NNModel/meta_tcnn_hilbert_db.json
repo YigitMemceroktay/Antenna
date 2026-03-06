@@ -1,0 +1,26 @@
+{
+  "model": "TCNNHilbert",
+  "loss_mode": "mag_db_hybrid",
+  "db_weight": 0.2,
+  "input_columns": [
+    "length of patch",
+    "width of patch",
+    "height of patch",
+    "height of substrate",
+    "height of solder resist layer",
+    "radius of the probe",
+    "c_pad",
+    "c_antipad",
+    "c_probe",
+    "dielectric constant of substrate",
+    "dielectric constant of solder resist layer"
+  ],
+  "target_length": 201,
+  "n_samples": 100,
+  "n_train": 80,
+  "n_val": 20,
+  "best_val_mse": 0.9356088042259216,
+  "device": "cpu",
+  "model_path": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\trained_model_tcnn_hilbert_db.pt",
+  "scaler_path": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\scaler_tcnn_hilbert_db.gz"
+}

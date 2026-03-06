@@ -1,0 +1,210 @@
+$begin '$base_index$'
+  $begin 'properties'
+    all_levels=000000000000
+    time(year=000000002026, month=000000000002, day=000000000028, hour=000000000015, min=000000000017, sec=000000000004)
+    version=000000000000
+  $end 'properties'
+  $begin '$base_index$'
+    $index$(pos=000000000000, lin=000000000001, lvl=000000000000)
+  $end '$base_index$'
+$end '$base_index$'
+$begin 'SolutionBlock1'
+	ProductName=''
+	CircuitName='HFSSDesign1'
+	VersionID=7042
+	PostProcess=false
+	LossLess=true
+	NextUniqueID=7123
+	MoveBackwards=false
+	$begin 'VariationIDs'
+		Map(V='$e1=\'2.5\' $e2=\'3.5\' c_antipad=\'0.028000000000000001mm\' c_pad=\'0.0037000000000000002mm\' c_probe=\'0.25\' d_probe=\'0.52749999999999997mm\' h_patch=\'0.012999999999999999mm\' h_sr=\'0.050000000000000003mm\' h_subs=\'0.40000000000000002mm\' l_patch=\'2.1099999999999999mm\' r_antipad=\'0.070699999999999999mm\' r_pad=\'0.042700000000000002mm\' r_probe=\'0.039mm\' w_patch=\'4.0899999999999999mm\'', ID=7096)
+		Map(V='$e1=\'5\' $e2=\'2.98\' c_antipad=\'0.05000000074505806mm\' c_pad=\'0.001mm\' c_probe=\'0.27000000000000002\' d_probe=\'0.67068000000000005mm\' h_patch=\'0.029000000000000001mm\' h_sr=\'0.044999999999999998mm\' h_subs=\'0.37999999523162842mm\' l_patch=\'2.484mm\' r_antipad=\'0.094000000745058043mm\' r_pad=\'0.043999999999999991mm\' r_probe=\'0.042999999999999997mm\' w_patch=\'3.3999999999999999mm\'', ID=7099)
+	$end 'VariationIDs'
+	$begin 'LinkedDataList'
+	$end 'LinkedDataList'
+	$begin 'InitialMeshes'
+		Vmap(7042, 7089)
+		M(VID=7099, Ver=7042, Dir='DV7099_V7089.imesh/')
+	$end 'InitialMeshes'
+	MeshAssemVersionID=0
+	$begin 'NextAssemVersionID'
+		NextUniqueID=1
+		MoveBackwards=false
+	$end 'NextAssemVersionID'
+	$begin 'DefinitionMeshes'
+		$begin 'DefMeshes_Comp-1'
+			DefinitionID=-1
+			VersionID=0
+			VIDMap('c_antipad=\'0.05000000074505806mm\' c_pad=\'0.001mm\' c_probe=\'0.27000000000000002\' d_probe=\'0.67068000000000005mm\' h_patch=\'0.029000000000000001mm\' h_sr=\'0.044999999999999998mm\' h_subs=\'0.37999999523162842mm\' l_patch=\'2.484mm\' r_antipad=\'0.094000000745058043mm\' r_pad=\'0.043999999999999991mm\' r_probe=\'0.042999999999999997mm\' w_patch=\'3.3999999999999999mm\'', 7101)
+			DM(VID=7101, Ver=0, Dir='NDV7101_V0.dmesh/')
+		$end 'DefMeshes_Comp-1'
+	$end 'DefinitionMeshes'
+	$begin 'MI'
+		$begin 'SubData'
+			ID=0
+			Vmap(7042, 7103)
+			MI(VID=7099, Ver=7042, Dir='DV7099_MI0_V7103.sd/')
+		$end 'SubData'
+	$end 'MI'
+	VersionID2=0
+$end 'SolutionBlock1'
+$begin 'BlockMapName'
+	FileHeader='SolutionBlock1'
+	'SolutionKey(SimSetup=3776, Instance=\'SetupDefinition\', Solution=-1, VersionID=7042)'='SolutionBlock5'
+	'SolutionKey(SimSetup=3776, Instance=\'SolutionDefinition\', Solution=3777, VersionID=7042)'='SolutionBlock2'
+	'SolutionKey(SimSetup=3776, Instance=\'SolutionDefinition\', Solution=3778, VersionID=7042)'='SolutionBlock3'
+	'SolutionKey(SimSetup=3776, Instance=\'SolutionDefinition\', Solution=3781, VersionID=7042)'='SolutionBlock4'
+$end 'BlockMapName'
+$begin 'SolutionBlock5'
+	SimSetupID=3776
+	SimSetupName='Setup1'
+	VersionID=7042
+	$begin 'EmConvergenceData'
+		Vmap(7042, 7095)
+		EmConv(VID=7099, Ver=7042, EmConv='DV7099_S3776_V7095.EMConvData')
+	$end 'EmConvergenceData'
+	IsImported=false
+	IsTable=false
+	SolveSetupID=6
+	$begin 'CurrMeshes'
+		Vmap(7042, 7043)
+		M(VID=7099, Ver=7042, Dir='DV7099_S3776_V7043.cmesh/')
+	$end 'CurrMeshes'
+	MeshAssemVersionID=0
+	$begin 'NextAssemVersionID'
+		NextUniqueID=1
+		MoveBackwards=false
+	$end 'NextAssemVersionID'
+	$begin 'ADP'
+		$begin 'SubData'
+			ID=5
+			Vmap(7042, 7121)
+			ADP(VID=7099, Ver=7042, Dir='DV7099_S3776_ADP5_V7121.sd/')
+		$end 'SubData'
+	$end 'ADP'
+	$begin 'SU'
+		$begin 'SubData'
+			ID=1
+			Vmap(7042, 7110)
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD1_V7110.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=2
+			Vmap(7042, 7113)
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD2_V7113.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=3
+			Vmap(7042, 7116)
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD3_V7116.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=4
+			Vmap(7042, 7119)
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD4_V7119.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=5
+			Vmap(7042, 7122)
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD5_V7122.su')
+		$end 'SubData'
+	$end 'SU'
+	$begin 'WaveAdapt'
+		WA(VID=7099, Ver=7042, A=1)
+	$end 'WaveAdapt'
+	$begin 'LastPassNumbers'
+		LP(VID=7099, Ver=7042, P=5)
+	$end 'LastPassNumbers'
+	$begin 'Profiles'
+		Vmap(7042, 7094)
+		P(VID=7099, Ver=7042, File='DV7099_S3776_V7094.profile')
+	$end 'Profiles'
+	$begin 'MI'
+		$begin 'SubData'
+			ID=0
+			Vmap(7042, 7104)
+			MI(VID=7099, Ver=7042, Dir='DV7099_S3776_MI0_V7104.sd/')
+		$end 'SubData'
+	$end 'MI'
+$end 'SolutionBlock5'
+$begin 'SolutionBlock3'
+	SolutionName='LastAdaptive'
+	SolutionID=3778
+	V=7042
+	$begin 'States'
+		F(VID=7099, Ver=7042)
+	$end 'States'
+	$begin 'Definition'
+		SamplingInterpolation=false
+		Frequencies(33000000000)
+		SolutionType=6
+		CenterFreq=0
+	$end 'Definition'
+	IsImported=false
+	IsTable=false
+	IsMatrixDataTable=false
+	SweepID=-1
+	KeepAllFastSweepFields=false
+	$begin 'M'
+		$begin 'SubData'
+			ID=0
+			Vmap(7042, 7108)
+			M(VID=7099, Ver=7042, File='DV7099_SOL3778_M0_V7108.sd')
+		$end 'SubData'
+	$end 'M'
+	$begin 'Fields'
+		Vmap(7042, 7067)
+		IDDblMap(7106, 33000000000)
+		$begin 'DataMap'
+			VID=7099
+			Ver=7042
+			F(DblID=7106, Dir='DV7099_S3778_V7067_F7106/')
+		$end 'DataMap'
+	$end 'Fields'
+$end 'SolutionBlock3'
+$begin 'SolutionBlock2'
+	SolutionName='AdaptivePass'
+	SolutionID=3777
+	V=7042
+	$begin 'States'
+		F(VID=7099, Ver=7042)
+	$end 'States'
+	$begin 'Definition'
+		SamplingInterpolation=false
+		Frequencies(33000000000)
+		SolutionType=6
+		CenterFreq=0
+	$end 'Definition'
+	IsImported=false
+	IsTable=false
+	IsMatrixDataTable=false
+	SweepID=-1
+	KeepAllFastSweepFields=false
+	$begin 'M'
+		$begin 'SubData'
+			ID=1
+			Vmap(7042, 7107)
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M1_V7107.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=2
+			Vmap(7042, 7111)
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M2_V7111.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=3
+			Vmap(7042, 7114)
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M3_V7114.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=4
+			Vmap(7042, 7117)
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M4_V7117.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=5
+			Vmap(7042, 7120)
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M5_V7120.sd')
+		$end 'SubData'
+	$end 'M'
+$end 'SolutionBlock2'

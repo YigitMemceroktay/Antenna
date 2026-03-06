@@ -1,0 +1,294 @@
+$begin '$base_index$'
+  $begin 'properties'
+    all_levels=000000000000
+    time(year=000000002026, month=000000000002, day=000000000028, hour=000000000015, min=000000000007, sec=000000000025)
+    version=000000000000
+  $end 'properties'
+  $begin '$base_index$'
+    $index$(pos=000000011556, lin=000000000273, lvl=000000000000)
+  $end '$base_index$'
+$end '$base_index$'
+$begin 'SolutionBlock1'
+	ProductName=''
+	CircuitName='HFSSDesign1'
+	VersionID=7042
+	PostProcess=false
+	LossLess=true
+	NextUniqueID=7154
+	MoveBackwards=false
+	$begin 'VariationIDs'
+		Map(V='$e1=\'2.5\' $e2=\'3.5\' c_antipad=\'0.028000000000000001mm\' c_pad=\'0.0037000000000000002mm\' c_probe=\'0.25\' d_probe=\'0.52749999999999997mm\' h_patch=\'0.012999999999999999mm\' h_sr=\'0.050000000000000003mm\' h_subs=\'0.40000000000000002mm\' l_patch=\'2.1099999999999999mm\' r_antipad=\'0.070699999999999999mm\' r_pad=\'0.042700000000000002mm\' r_probe=\'0.039mm\' w_patch=\'4.0899999999999999mm\'', ID=7096)
+		Map(V='$e1=\'3.1899999999999999\' $e2=\'2.98\' c_antipad=\'0.044999999999999998mm\' c_pad=\'0.001mm\' c_probe=\'0.27000000000000002\' d_probe=\'0.67068000000000005mm\' h_patch=\'0.029000000000000001mm\' h_sr=\'0.044999999999999998mm\' h_subs=\'0.37999999523162842mm\' l_patch=\'2.484mm\' r_antipad=\'0.088999999999999996mm\' r_pad=\'0.043999999999999991mm\' r_probe=\'0.042999999999999997mm\' w_patch=\'3.3999999999999999mm\'', ID=7099)
+	$end 'VariationIDs'
+	$begin 'LinkedDataList'
+	$end 'LinkedDataList'
+	$begin 'InitialMeshes'
+		M(VID=7099, Ver=7042, Dir='DV7099_V7042.imesh/')
+	$end 'InitialMeshes'
+	MeshAssemVersionID=0
+	$begin 'NextAssemVersionID'
+		NextUniqueID=1
+		MoveBackwards=false
+	$end 'NextAssemVersionID'
+	$begin 'DefinitionMeshes'
+		$begin 'DefMeshes_Comp-1'
+			DefinitionID=-1
+			VersionID=0
+			VIDMap('c_antipad=\'0.044999999999999998mm\' c_pad=\'0.001mm\' c_probe=\'0.27000000000000002\' d_probe=\'0.67068000000000005mm\' h_patch=\'0.029000000000000001mm\' h_sr=\'0.044999999999999998mm\' h_subs=\'0.37999999523162842mm\' l_patch=\'2.484mm\' r_antipad=\'0.088999999999999996mm\' r_pad=\'0.043999999999999991mm\' r_probe=\'0.042999999999999997mm\' w_patch=\'3.3999999999999999mm\'', 7101)
+			DM(VID=7101, Ver=0, Dir='NDV7101_V0.dmesh/')
+		$end 'DefMeshes_Comp-1'
+	$end 'DefinitionMeshes'
+	$begin 'MI'
+		$begin 'SubData'
+			ID=0
+			MI(VID=7099, Ver=7042, Dir='DV7099_MI0_V7042.sd/')
+		$end 'SubData'
+	$end 'MI'
+	VersionID2=0
+$end 'SolutionBlock1'
+$begin 'BlockMapName'
+	FileHeader='SolutionBlock1'
+	'SolutionKey(SimSetup=3776, Instance=\'SetupDefinition\', Solution=-1, VersionID=7042)'='SolutionBlock5'
+	'SolutionKey(SimSetup=3776, Instance=\'SolutionDefinition\', Solution=3777, VersionID=7042)'='SolutionBlock2'
+	'SolutionKey(SimSetup=3776, Instance=\'SolutionDefinition\', Solution=3778, VersionID=7042)'='SolutionBlock3'
+	'SolutionKey(SimSetup=3776, Instance=\'SolutionDefinition\', Solution=3781, VersionID=7042)'='SolutionBlock4'
+$end 'BlockMapName'
+$begin 'SolutionBlock2'
+	SolutionName='AdaptivePass'
+	SolutionID=3777
+	V=7042
+	$begin 'States'
+		F(VID=7099, Ver=7042)
+	$end 'States'
+	$begin 'Definition'
+		SamplingInterpolation=false
+		Frequencies(33000000000)
+		SolutionType=6
+		CenterFreq=0
+	$end 'Definition'
+	IsImported=false
+	IsTable=false
+	IsMatrixDataTable=false
+	SweepID=-1
+	KeepAllFastSweepFields=false
+	$begin 'M'
+		$begin 'SubData'
+			ID=1
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M1_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=2
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M2_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=3
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M3_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=4
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M4_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=5
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M5_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=6
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M6_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=7
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M7_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=8
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M8_V7042.sd')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=9
+			M(VID=7099, Ver=7042, File='DV7099_SOL3777_M9_V7042.sd')
+		$end 'SubData'
+	$end 'M'
+$end 'SolutionBlock2'
+$begin 'SolutionBlock3'
+	SolutionName='LastAdaptive'
+	SolutionID=3778
+	V=7042
+	$begin 'States'
+		F(VID=7099, Ver=7042)
+	$end 'States'
+	$begin 'Definition'
+		SamplingInterpolation=false
+		Frequencies(33000000000)
+		SolutionType=6
+		CenterFreq=0
+	$end 'Definition'
+	IsImported=false
+	IsTable=false
+	IsMatrixDataTable=false
+	SweepID=-1
+	KeepAllFastSweepFields=false
+	$begin 'M'
+		$begin 'SubData'
+			ID=0
+			M(VID=7099, Ver=7042, File='DV7099_SOL3778_M0_V7042.sd')
+		$end 'SubData'
+	$end 'M'
+	$begin 'Fields'
+		IDDblMap(7106, 33000000000)
+		$begin 'DataMap'
+			VID=7099
+			Ver=7042
+			F(DblID=7106, Dir='DV7099_S3778_V7042_F7106/')
+		$end 'DataMap'
+	$end 'Fields'
+$end 'SolutionBlock3'
+$begin 'SolutionBlock4'
+	SolutionName='Sweep'
+	SolutionID=3781
+	V=7042
+	$begin 'States'
+		F(VID=7099, Ver=7042)
+	$end 'States'
+	$begin 'Definition'
+		SamplingInterpolation=false
+		Frequencies(23000000000, 23050000000, 23100000000, 23150000000, 23200000000, 23250000000, 23300000000, 23350000000, 23400000000, 23450000000, 23500000000, 23550000000, 23600000000, 23650000000, 23700000000, 23750000000, 23800000000, 23850000000, 23900000000, 23950000000, 24000000000, 24050000000, 24100000000, 24150000000, 24200000000, 24250000000, 24300000000, 24350000000, 24400000000, 24450000000, 24500000000, 24550000000, 24600000000, 24650000000, 24700000000, 24750000000, 24800000000, 24850000000, 24900000000, 24950000000, 25000000000, 25050000000, 25100000000, 25150000000, 25200000000, 25250000000, 25300000000, 25350000000, 25400000000, 25450000000, 25500000000, 25550000000, 25600000000, 25650000000, 25700000000, 25750000000, 25800000000, 25850000000, 25900000000, 25950000000, 26000000000, 26050000000, 26100000000, 26150000000, 26200000000, 26250000000, 26300000000, 26350000000, 26400000000, 26450000000, 26500000000, 26550000000, 26600000000, 26650000000, 26700000000, 26750000000, 26800000000, 26850000000, 26900000000, 26950000000, 27000000000, 27050000000, 27100000000, 27150000000, 27200000000, 27250000000, 27300000000, 27350000000, 27400000000, 27450000000, 27500000000, 27550000000, 27600000000, 27650000000, 27700000000, 27750000000, 27800000000, 27850000000, 27900000000, 27950000000, 28000000000, 28050000000, 28100000000, 28150000000, 28200000000, 28250000000, 28300000000, 28350000000, 28400000000, 28450000000, 28500000000, 28550000000, 28600000000, 28650000000, 28700000000, 28750000000, 28800000000, 28850000000, 28900000000, 28950000000, 29000000000, 29050000000, 29100000000, 29150000000, 29200000000, 29250000000, 29300000000, 29350000000, 29400000000, 29450000000, 29500000000, 29550000000, 29600000000, 29650000000, 29700000000, 29750000000, 29800000000, 29850000000, 29900000000, 29950000000, 30000000000, 30050000000, 30100000000, 30150000000, 30200000000, 30250000000, 30300000000, 30350000000, 30400000000, 30450000000, 30500000000, 30550000000, 30600000000, 30650000000, 30700000000, 30750000000, 30800000000, 30850000000, 30900000000, 30950000000, 31000000000, 31050000000, 31100000000, 31150000000, 31200000000, 31250000000, 31300000000, 31350000000, 31400000000, 31450000000, 31500000000, 31550000000, 31600000000, 31650000000, 31700000000, 31750000000, 31800000000, 31850000000, 31900000000, 31950000000, 32000000000, 32050000000, 32100000000, 32150000000, 32200000000, 32250000000, 32300000000, 32350000000, 32400000000, 32450000000, 32500000000, 32550000000, 32600000000, 32650000000, 32700000000, 32750000000, 32800000000, 32850000000, 32900000000, 32950000000, 33000000000)
+		SolutionType=5
+		CenterFreq=0
+	$end 'Definition'
+	IsImported=false
+	IsTable=false
+	IsMatrixDataTable=false
+	SweepID=0
+	KeepAllFastSweepFields=false
+	$begin 'M'
+		$begin 'SubData'
+			ID=0
+			M(VID=7099, Ver=7042, File='DV7099_SOL3781_M0_V7042.sd')
+		$end 'SubData'
+	$end 'M'
+	$begin 'Fields'
+		IDDblMap(7135, 33000000000, 7137, 23000000000, 7138, 28000000000, 7139, 25500000000, 7140, 30500000000, 7145, 31750000000, 7146, 29250000000, 7147, 26750000000, 7148, 24250000000)
+		$begin 'DataMap'
+			VID=7099
+			Ver=7042
+			F(DblID=7137, Dir='DV7099_S3781_V7042_F7137/')
+			F(DblID=7148, Dir='DV7099_S3781_V7042_F7148/')
+			F(DblID=7139, Dir='DV7099_S3781_V7042_F7139/')
+			F(DblID=7147, Dir='DV7099_S3781_V7042_F7147/')
+			F(DblID=7138, Dir='DV7099_S3781_V7042_F7138/')
+			F(DblID=7146, Dir='DV7099_S3781_V7042_F7146/')
+			F(DblID=7140, Dir='DV7099_S3781_V7042_F7140/')
+			F(DblID=7145, Dir='DV7099_S3781_V7042_F7145/')
+			F(DblID=7135, Dir='DV7099_S3781_V7042_F7135/')
+		$end 'DataMap'
+	$end 'Fields'
+	$begin 'TransientSolveStauts'
+		SS(VID=7099, Ver=7042, SS=1)
+	$end 'TransientSolveStauts'
+	$begin 'SolverUsage'
+		IDDblMap(7141, 23000000000, 7142, 28000000000, 7143, 25500000000, 7144, 30500000000, 7149, 31750000000, 7150, 29250000000, 7151, 26750000000, 7152, 24250000000)
+		$begin 'DataMap'
+			VID=7099
+			Ver=7042
+			SU(DblID=7141, SU='DV7099_S3781_V7042_F7141_SU.txt')
+			SU(DblID=7152, SU='DV7099_S3781_V7042_F7152_SU.txt')
+			SU(DblID=7143, SU='DV7099_S3781_V7042_F7143_SU.txt')
+			SU(DblID=7151, SU='DV7099_S3781_V7042_F7151_SU.txt')
+			SU(DblID=7142, SU='DV7099_S3781_V7042_F7142_SU.txt')
+			SU(DblID=7150, SU='DV7099_S3781_V7042_F7150_SU.txt')
+			SU(DblID=7144, SU='DV7099_S3781_V7042_F7144_SU.txt')
+			SU(DblID=7149, SU='DV7099_S3781_V7042_F7149_SU.txt')
+		$end 'DataMap'
+	$end 'SolverUsage'
+$end 'SolutionBlock4'
+$begin 'SolutionBlock5'
+	SimSetupID=3776
+	SimSetupName='Setup1'
+	VersionID=7042
+	$begin 'EmConvergenceData'
+		EmConv(VID=7099, Ver=7042, EmConv='DV7099_S3776_V7042.EMConvData')
+	$end 'EmConvergenceData'
+	IsImported=false
+	IsTable=false
+	SolveSetupID=6
+	$begin 'CurrMeshes'
+		M(VID=7099, Ver=7042, Dir='DV7099_S3776_V7042.cmesh/')
+	$end 'CurrMeshes'
+	MeshAssemVersionID=0
+	$begin 'NextAssemVersionID'
+		NextUniqueID=1
+		MoveBackwards=false
+	$end 'NextAssemVersionID'
+	$begin 'ADP'
+		$begin 'SubData'
+			ID=9
+			ADP(VID=7099, Ver=7042, Dir='DV7099_S3776_ADP9_V7042.sd/')
+		$end 'SubData'
+	$end 'ADP'
+	$begin 'SU'
+		$begin 'SubData'
+			ID=1
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD1_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=2
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD2_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=3
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD3_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=4
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD4_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=5
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD5_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=6
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD6_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=7
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD7_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=8
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD8_V7042.su')
+		$end 'SubData'
+		$begin 'SubData'
+			ID=9
+			SU(VID=7099, Ver=7042, File='DV7099_S3776_SD9_V7042.su')
+		$end 'SubData'
+	$end 'SU'
+	$begin 'WaveAdapt'
+		WA(VID=7099, Ver=7042, A=1)
+	$end 'WaveAdapt'
+	$begin 'LastPassNumbers'
+		LP(VID=7099, Ver=7042, P=9)
+	$end 'LastPassNumbers'
+	$begin 'Profiles'
+		P(VID=7099, Ver=7042, File='DV7099_S3776_V7042.profile')
+	$end 'Profiles'
+	$begin 'MI'
+		$begin 'SubData'
+			ID=0
+			MI(VID=7099, Ver=7042, Dir='DV7099_S3776_MI0_V7042.sd/')
+		$end 'SubData'
+	$end 'MI'
+$end 'SolutionBlock5'
+$begin '$index$'
+	$begin '$index$'
+		BlockMapName(pos=2438, lin=39, lvl=0)
+		SolutionBlock2(pos=2948, lin=46, lvl=0)
+		SolutionBlock3(pos=4291, lin=103, lvl=0)
+		SolutionBlock4(pos=4974, lin=136, lvl=0)
+		SolutionBlock5(pos=9605, lin=195, lvl=0)
+		SolutionBlock1(pos=370, lin=1, lvl=0)
+		$base_index$(pos=0, lin=1, lvl=0)
+		$index$(pos=11556, lin=273, lvl=0)
+	$end '$index$'
+$end '$index$'

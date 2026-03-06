@@ -1,0 +1,5 @@
+tag,dataset,model_type,loss_mode,db_weight,slope_weight,passivity_weight,best_val_mse,model_path,scaler_path
+dual_ri,old_excel,dual,ri,0.0,0.0,0.0,0.005696176194760483,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_dual_ri.pt,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_dual_ri.gz
+hilbert_ri,old_excel,hilbert,ri,0.0,0.0,0.0,0.23652152623981237,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_hilbert_ri.pt,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_hilbert_ri.gz
+dual_db_hybrid_v1,old_excel,dual,mag_db_hybrid,0.2,0.05,0.02,0.29871999518945813,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_dual_db_hybrid_v1.pt,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_dual_db_hybrid_v1.gz
+dual_db_hybrid_v2,old_excel,dual,mag_db_hybrid,0.35,0.1,0.05,0.5211606472730637,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_dual_db_hybrid_v2.pt,C:\Users\yigit\OneDrive\Belgeler\smgp\NNModel\ablation_dual_db_hybrid_v2.gz

@@ -1,0 +1,17 @@
+{
+  "model": "DualResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 64,
+  "weights": {
+    "w_ri": 0.2,
+    "w_mag_db": 1.0,
+    "w_slope": 0.1,
+    "w_curv": 0.05,
+    "w_passivity": 0.05,
+    "w_hilbert": 0.02
+  },
+  "n_samples": 5000,
+  "best_val_loss": 0.4959714189171791,
+  "model_path": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\trained_model_resunet_dual.pt",
+  "scaler_path": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\scaler_resunet_dual.gz"
+}

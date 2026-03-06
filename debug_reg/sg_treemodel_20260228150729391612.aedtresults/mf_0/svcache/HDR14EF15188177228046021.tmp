@@ -1,0 +1,50 @@
+SimValueCacheVersionID=1
+$begin 'SimValueInfos'
+	NextUniqueID=2
+	MoveBackwards=false
+	$begin 'SimValue'
+		ID=0
+		$begin 'SimValueParams'
+			QuantityName='St(pad_T1,pad_T1)'
+			ValueState(90, 15, 1, 2)
+			MatrixSize(0, 0)
+		$end 'SimValueParams'
+	$end 'SimValue'
+	$begin 'SimValue'
+		ID=1
+		$begin 'SimValueParams'
+			QuantityName='S(pad_T1,pad_T1)'
+			ValueState(90, 15, 1, 2)
+			MatrixSize(0, 0)
+		$end 'SimValueParams'
+	$end 'SimValue'
+$end 'SimValueInfos'
+$begin 'SimValueCache'
+	$begin 'DesignMap'
+		DesignID=0
+		$begin 'SolutionMap'
+			$begin 'ContextMap'
+				SolutionID=3777
+			$end 'ContextMap'
+			$begin 'ContextMap'
+				SolutionID=3778
+			$end 'ContextMap'
+			$begin 'ContextMap'
+				SolutionID=3781
+				$begin 'VersionMap'
+					$begin 'ReportTypeSolnDef'
+						ReportType=1
+						SimValueContext(3, 0, 2, 0, false, false, -1, 1, 0, 1, 1, '', 0, 0)
+					$end 'ReportTypeSolnDef'
+					$begin 'MajorVVMap'
+						VersionID=7042
+						$begin 'MinorVVMap'
+							MajorVariation='$e1=\'3.1899999999999999\' $e2=\'2\' c_antipad=\'0.044999999999999998mm\' c_pad=\'0.001mm\' c_probe=\'0.45000000000000001\' d_probe=\'1.1178000000000001mm\' h_patch=\'0.029000000000000001mm\' h_sr=\'0.044999999999999998mm\' h_subs=\'0.36599999666213989mm\' l_patch=\'2.484mm\' r_antipad=\'0.096000000000000002mm\' r_pad=\'0.050999999999999997mm\' r_probe=\'0.050000000000000003mm\' w_patch=\'3.3999999999999999mm\''
+							MinorCacheFile='min165315188177228056934.tmp'
+						$end 'MinorVVMap'
+					$end 'MajorVVMap'
+				$end 'VersionMap'
+			$end 'ContextMap'
+		$end 'SolutionMap'
+	$end 'DesignMap'
+$end 'SimValueCache'

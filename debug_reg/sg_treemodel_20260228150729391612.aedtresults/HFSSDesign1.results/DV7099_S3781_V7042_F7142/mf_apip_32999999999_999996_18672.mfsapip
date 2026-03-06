@@ -1,0 +1,68 @@
+$begin date_time_stamp
+	timesinceepock:1772280495
+$end date_time_stamp
+$begin sysinfo
+	os:win
+	cpuid:'Intel(R) Xeon(R) Gold 5218 CPU @ 2.30GHz'
+	cpumodel:5218
+	cpubrand:intel
+	cpuPhyCores:16
+	cpuLogCores:32
+	cpufreqkhz:2.3e+09
+	cpucachelinesize:64
+	cpuestllcmb:36
+	cpuestgflops:883.2
+	cpuestbwkbps:128
+	numnumanodes:1
+	virtualmemkb:1.37439e+11
+	pagesizekb:4096
+$end sysinfo
+$begin matsolver
+	$begin matsolverinfo
+		solvertype:shared_memory
+		solverprecision:double
+		solversymmetry:complex_symm
+		matrixdim:40673
+		matrixbw:20.9733
+		matrixnnz:853047
+		rootdim:841
+		mathlib:mkl
+		nummpitasks:1
+		numthreadpermpitasks:0
+	$end matsolverinfo
+	$begin matsolveranalysis
+		analysysstatus:valid
+		numsupernodes:3591
+		factornnz:8054105
+		factorestflops:6878911776
+		fbsestflops:27645583
+		rootfactestflops:198278669
+		rootfbsestflops:353640
+		analysistimesec:0.316723
+		analysismemkb:24640
+	$end matsolveranalysis
+	$begin matsolverfact
+		fatorizationstatus:valid
+		factorizationnumcores:4
+		factorizationtimesec:0.479255
+		factorizationmentotalkb:197345
+	$end matsolverfact
+	$begin matsolverfbs
+		fbstatus:valid
+		fbstype:fullsolve
+		fbsmt:false
+		fbsmrhs:false
+		fbsnumcores:4
+		fbsnumsolves:1
+		fbsavgsolvetime1solvesec:0.0376104
+		fbscputimesec:0.0376104
+		fbsmemorytotalkb:173776
+	$end matsolverfbs
+	$begin matsolverprofile
+		maxmemkb:197345
+		diskkb:0
+		totalrealtimesec:-1
+		totalcputimesec:-1
+		totaltimesec:-1
+	$end matsolverprofile
+$end matsolver
