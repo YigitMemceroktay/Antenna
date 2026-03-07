@@ -173,10 +173,15 @@ def compute_loss(
     target: torch.Tensor,
     w_ri: float,
     w_mag_db: float,
+    db_loss_mode: str,
+    db_weight_alpha: float,
+    db_weight_max: float,
+    db_weight_eps: float,
     w_slope: float,
     w_curv: float,
     w_passivity: float,
     w_hilbert: float,
+    hilbert_edge_frac: float,
 ) -> torch.Tensor:
     mse = nn.MSELoss()
     real_p, imag_p = pred[:, 0, :], pred[:, 1, :]
@@ -188,6 +193,15 @@ def compute_loss(
     db_p = 20.0 * torch.log10(torch.clamp(mag_p, min=1e-8))
     db_t = 20.0 * torch.log10(torch.clamp(mag_t, min=1e-8))
 
+    if db_loss_mode == "weighted":
+        db_weights = torch.pow(1.0 / torch.clamp(mag_t, min=db_weight_eps), db_weight_alpha)
+        db_weights = torch.clamp(db_weights, max=db_weight_max)
+        db_weights = db_weights / torch.clamp(torch.mean(db_weights), min=1e-8)
+        db_error = ((db_p - db_t) ** 2) / (db_t**2 + db_weight_eps)
+        db_loss = torch.mean(db_weights * db_error)
+    else:
+        db_loss = torch.mean(((db_p - db_t) ** 2) / (db_t**2 + db_weight_eps))
+
     slope_p = db_p[:, 1:] - db_p[:, :-1]
     slope_t = db_t[:, 1:] - db_t[:, :-1]
 
@@ -195,11 +209,21 @@ def compute_loss(
     curv_t = slope_t[:, 1:] - slope_t[:, :-1]
 
     passivity = torch.mean(torch.relu(mag_p - 1.0) ** 2)
-    hilbert_consistency = mse(imag_p, hilbert_imag(real_p))
+
+    imag_h = hilbert_imag(real_p)
+    n_freq = imag_p.shape[-1]
+    edge = int(round(n_freq * hilbert_edge_frac))
+    if edge > 0 and (2 * edge) < n_freq:
+        imag_p_h = imag_p[:, edge:-edge]
+        imag_h_h = imag_h[:, edge:-edge]
+    else:
+        imag_p_h = imag_p
+        imag_h_h = imag_h
+    hilbert_consistency = mse(imag_p_h, imag_h_h)
 
     loss = (
         w_ri * mse(pred, target)
-        + w_mag_db * mse(db_p, db_t)
+        + w_mag_db * db_loss
         + w_slope * mse(slope_p, slope_t)
         + w_curv * mse(curv_p, curv_t)
         + w_passivity * passivity
@@ -208,7 +232,13 @@ def compute_loss(
     return loss
 
 
-def evaluate(model: nn.Module, loader: DataLoader, device: torch.device, args: argparse.Namespace) -> float:
+def evaluate(
+    model: nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    args: argparse.Namespace,
+    w_hilbert_effective: float,
+) -> float:
     model.eval()
     losses = []
     with torch.no_grad():
@@ -221,13 +251,25 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device, args: a
                 yb,
                 w_ri=args.w_ri,
                 w_mag_db=args.w_mag_db,
+                db_loss_mode=args.db_loss_mode,
+                db_weight_alpha=args.db_weight_alpha,
+                db_weight_max=args.db_weight_max,
+                db_weight_eps=args.db_weight_eps,
                 w_slope=args.w_slope,
                 w_curv=args.w_curv,
                 w_passivity=args.w_passivity,
-                w_hilbert=args.w_hilbert,
+                w_hilbert=w_hilbert_effective,
+                hilbert_edge_frac=args.hilbert_edge_frac,
             )
             losses.append(loss.item())
     return float(np.mean(losses)) if losses else float("nan")
+
+
+def effective_hilbert_weight(epoch: int, args: argparse.Namespace) -> float:
+    if args.hilbert_warmup_epochs <= 0:
+        return args.w_hilbert
+    scale = min(1.0, float(epoch) / float(args.hilbert_warmup_epochs))
+    return args.w_hilbert * scale
 
 
 def train(args: argparse.Namespace) -> None:
@@ -265,6 +307,7 @@ def train(args: argparse.Namespace) -> None:
     for epoch in range(1, args.epochs + 1):
         model.train()
         losses = []
+        w_h_epoch = effective_hilbert_weight(epoch, args)
         for xb, yb in train_loader:
             xb = xb.to(device)
             yb = yb.to(device)
@@ -276,10 +319,15 @@ def train(args: argparse.Namespace) -> None:
                 yb,
                 w_ri=args.w_ri,
                 w_mag_db=args.w_mag_db,
+                db_loss_mode=args.db_loss_mode,
+                db_weight_alpha=args.db_weight_alpha,
+                db_weight_max=args.db_weight_max,
+                db_weight_eps=args.db_weight_eps,
                 w_slope=args.w_slope,
                 w_curv=args.w_curv,
                 w_passivity=args.w_passivity,
-                w_hilbert=args.w_hilbert,
+                w_hilbert=w_h_epoch,
+                hilbert_edge_frac=args.hilbert_edge_frac,
             )
             loss.backward()
             optimizer.step()
@@ -287,8 +335,8 @@ def train(args: argparse.Namespace) -> None:
 
         scheduler.step()
         train_loss = float(np.mean(losses))
-        val_loss = evaluate(model, val_loader, device, args)
-        history.append({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss})
+        val_loss = evaluate(model, val_loader, device, args, w_h_epoch)
+        history.append({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "w_hilbert": w_h_epoch})
 
         if val_loss < best_val:
             best_val = val_loss
@@ -321,6 +369,12 @@ def train(args: argparse.Namespace) -> None:
             "w_passivity": args.w_passivity,
             "w_hilbert": args.w_hilbert,
         },
+        "db_loss_mode": args.db_loss_mode,
+        "db_weight_alpha": args.db_weight_alpha,
+        "db_weight_max": args.db_weight_max,
+        "db_weight_eps": args.db_weight_eps,
+        "hilbert_edge_frac": args.hilbert_edge_frac,
+        "hilbert_warmup_epochs": args.hilbert_warmup_epochs,
         "n_samples": int(len(x_scaled)),
         "best_val_loss": float(best_val),
         "model_path": str(model_path),
@@ -352,10 +406,16 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--w-ri", type=float, default=0.20)
     parser.add_argument("--w-mag-db", type=float, default=1.00)
+    parser.add_argument("--db-loss-mode", type=str, default="rse", choices=["rse", "weighted"])
+    parser.add_argument("--db-weight-alpha", type=float, default=1.0)
+    parser.add_argument("--db-weight-max", type=float, default=10.0)
+    parser.add_argument("--db-weight-eps", type=float, default=1e-4)
     parser.add_argument("--w-slope", type=float, default=0.10)
     parser.add_argument("--w-curv", type=float, default=0.05)
     parser.add_argument("--w-passivity", type=float, default=0.05)
     parser.add_argument("--w-hilbert", type=float, default=0.02)
+    parser.add_argument("--hilbert-edge-frac", type=float, default=0.12)
+    parser.add_argument("--hilbert-warmup-epochs", type=int, default=60)
 
     parser.add_argument("--log-every", type=int, default=20)
     parser.add_argument("--cpu", action="store_true")

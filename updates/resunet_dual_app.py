@@ -34,6 +34,10 @@ def to_db(mag: np.ndarray) -> np.ndarray:
     return 20.0 * np.log10(np.clip(mag, 1e-12, None))
 
 
+def rse(y_pred: np.ndarray, y_true: np.ndarray, eps: float = 1e-6) -> float:
+    return float(np.mean(((y_pred - y_true) ** 2) / (y_true**2 + eps)))
+
+
 def smooth_1d(y: np.ndarray, method: str, strength: float, window: int, poly: int) -> np.ndarray:
     if method == "none":
         return y
@@ -197,11 +201,15 @@ def main() -> None:
 
     mse_ant = float(np.mean((y_ant - y_true) ** 2))
     mse_ours = float(np.mean((y_ours - y_true) ** 2))
+    rse_ant = rse(y_ant, y_true)
+    rse_ours = rse(y_ours, y_true)
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Dataset", dataset_label)
     c2.metric("Antenna NN MSE", f"{mse_ant:.6f}")
     c3.metric("ResUNet MSE", f"{mse_ours:.6f}")
+    c4.metric("Antenna NN RSE", f"{rse_ant:.6f}")
+    c5.metric("ResUNet RSE", f"{rse_ours:.6f}")
 
     x_axis = np.arange(len(y_true))
     fig = go.Figure()
