@@ -34,6 +34,7 @@ if str(THIS_DIR) not in sys.path:
 from compare_antenna_vs_tcnn_sdd11 import AntennaNeuralNet
 from train_resunet_dual import DualResUNet1D, INPUT_COLUMNS
 from train_resunet_small_v2 import SmallResUNet1DV2
+from train_resunet_big import BigResUNet1D
 
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
@@ -114,6 +115,8 @@ def compute_dataset_stats(
             m = DualResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Small v2":
             m = SmallResUNet1DV2(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+        elif model_name == "Big":
+            m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         else:
             return {}
         m.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
@@ -206,6 +209,15 @@ def load_small_resunet_v2(model_path: str, scaler_path: str, target_len: int):
     return model, scaler
 
 
+@st.cache_resource
+def load_big_resunet(model_path: str, scaler_path: str, target_len: int):
+    scaler = joblib.load(PROJECT_ROOT / scaler_path)
+    model  = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
+    model.eval()
+    return model, scaler
+
+
 # ---------------------------------------------------------------------------
 # Prediction helper
 # ---------------------------------------------------------------------------
@@ -255,6 +267,8 @@ def main() -> None:
         dual_scaler_path = st.text_input("DualResUNet scaler",    value="NNModel/scaler_resunet_dual.gz")
         sml2_model_path  = st.text_input("SmallResUNet v2 model",  value="NNModel/trained_model_resunet_small_v2.pt")
         sml2_scaler_path = st.text_input("SmallResUNet v2 scaler", value="NNModel/scaler_resunet_small_v2.gz")
+        big_model_path   = st.text_input("BigResUNet model",        value="NNModel/trained_model_resunet_big.pt")
+        big_scaler_path  = st.text_input("BigResUNet scaler",       value="NNModel/scaler_resunet_big.gz")
 
     # ---- Load data ----
     if dataset == "lhs":
@@ -295,6 +309,12 @@ def main() -> None:
         st.warning(f"SmallResUNet v2 could not be loaded: {e}")
         sml2_model = None
 
+    try:
+        big_model, big_scaler = load_big_resunet(big_model_path, big_scaler_path, target_len)
+    except Exception as e:
+        st.warning(f"BigResUNet could not be loaded: {e}")
+        big_model = None
+
     # ---- Predictions ----
     def get_curve(model, scaler):
         if model is None:
@@ -305,6 +325,7 @@ def main() -> None:
     real_ant,  imag_ant  = get_curve(ant_model,  ant_scaler)
     real_dual, imag_dual = get_curve(dual_model, dual_scaler)
     real_sml2, imag_sml2 = get_curve(sml2_model, sml2_scaler)
+    real_big,  imag_big  = get_curve(big_model,  big_scaler)
 
     # ---- Convert to display space ----
     def display(real, imag):
@@ -322,6 +343,7 @@ def main() -> None:
     y_ant  = smooth(display(real_ant,  imag_ant))
     y_dual = smooth(display(real_dual, imag_dual))
     y_sml2 = smooth(display(real_sml2, imag_sml2))
+    y_big  = smooth(display(real_big,  imag_big))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -336,8 +358,9 @@ def main() -> None:
     ant_m  = metrics_row(y_ant,  "Antenna NN")
     dual_m = metrics_row(y_dual, "DualResUNet")
     sml2_m = metrics_row(y_sml2, "Small v2")
+    big_m  = metrics_row(y_big,  "Big")
 
-    all_metrics = {**ant_m, **dual_m, **sml2_m}
+    all_metrics = {**ant_m, **dual_m, **sml2_m, **big_m}
     cols = st.columns(2 + len(all_metrics))
     cols[0].metric("Dataset", dataset_label)
     cols[1].metric("Sample", idx)
@@ -358,6 +381,9 @@ def main() -> None:
     if y_sml2 is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_sml2, mode="lines", name="Small v2 (base_ch=48)",
                                  line=dict(width=2, dash="longdash", color="darkorange")))
+    if y_big is not None:
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big, mode="lines", name="Big (base_ch=128)",
+                                 line=dict(width=2, dash="dash", color="purple")))
 
     fig.update_layout(
         title=f"{trace_label} — {dataset_label}, sample {idx}",
@@ -380,6 +406,7 @@ def main() -> None:
 | Antenna NN | — | ~small | MSE | — |
 | DualResUNet | 64 | ~1.5M | 6 (ri, mag_db, slope, curv, passivity, hilbert) | 300 |
 | Small v2 | 48 | ~450k | 5 (ri, mag_db, slope, curv, passivity) | 250 |
+| Big | 128 | ~6M | 5 (ri, mag_db, slope, curv, passivity) | 300 |
         """)
 
     # ---- Dataset-wide statistics ----
@@ -390,6 +417,7 @@ def main() -> None:
         "Antenna NN":  (ant_model_path,  ant_scaler_path),
         "DualResUNet": (dual_model_path, dual_scaler_path),
         "Small v2":    (sml2_model_path, sml2_scaler_path),
+        "Big":         (big_model_path,  big_scaler_path),
     }
 
     x_all_np   = x_df.values.astype(np.float32)
@@ -441,6 +469,7 @@ def main() -> None:
             "Antenna NN": "royalblue",
             "DualResUNet": "firebrick",
             "Small v2": "darkorange",
+            "Big": "purple",
         }
         fig3 = go.Figure()
         for name, stats in all_stats.items():
@@ -465,6 +494,7 @@ def main() -> None:
     history_files = {
         "DualResUNet":  PROJECT_ROOT / "NNModel" / "history_resunet_dual.csv",
         "Small v2":     PROJECT_ROOT / "NNModel" / "history_resunet_small_v2.csv",
+        "Big":          PROJECT_ROOT / "NNModel" / "history_resunet_big.csv",
     }
 
     available = {name: path for name, path in history_files.items() if path.exists()}
@@ -477,7 +507,7 @@ def main() -> None:
             default=list(available.keys()),
         )
 
-        colors = {"DualResUNet": "firebrick", "Small v2": "darkorange"}
+        colors = {"DualResUNet": "firebrick", "Small v2": "darkorange", "Big": "purple"}
         fig2 = go.Figure()
 
         for name in selected_histories:
