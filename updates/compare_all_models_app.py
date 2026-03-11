@@ -1,12 +1,11 @@
 """
 compare_all_models_app.py
 
-Compares five models side by side on the same sample:
+Compares four models side by side on the same sample:
   1. Real data (ground truth)
   2. Antenna NN         (benchmark)
   3. DualResUNet        (base_ch=64, 6-term loss, 300 epochs)
-  4. SmallResUNet v1    (base_ch=32, 4-term loss, 150 epochs — underfit)
-  5. SmallResUNet v2    (base_ch=48, 5-term loss, 250 epochs — capacity fixed)
+  4. SmallResUNet v2    (base_ch=48, 5-term loss, 250 epochs)
 
 Run:
     python3 -m streamlit run updates/compare_all_models_app.py
@@ -32,7 +31,6 @@ if str(THIS_DIR) not in sys.path:
 
 from compare_antenna_vs_tcnn_sdd11 import AntennaNeuralNet
 from train_resunet_dual import DualResUNet1D, INPUT_COLUMNS
-from train_resunet_small import SmallResUNet1D
 from train_resunet_small_v2 import SmallResUNet1DV2
 
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
@@ -82,8 +80,6 @@ def compute_dataset_stats(
             m = AntennaNeuralNet()
         elif model_name == "DualResUNet":
             m = DualResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name == "Small v1":
-            m = SmallResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Small v2":
             m = SmallResUNet1DV2(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         else:
@@ -159,15 +155,6 @@ def load_dual_resunet(model_path: str, scaler_path: str, target_len: int):
 
 
 @st.cache_resource
-def load_small_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = SmallResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
 def load_small_resunet_v2(model_path: str, scaler_path: str, target_len: int):
     scaler = joblib.load(PROJECT_ROOT / scaler_path)
     model  = SmallResUNet1DV2(input_dim=len(INPUT_COLUMNS), target_len=target_len)
@@ -194,7 +181,7 @@ def predict(model: torch.nn.Module, scaler, x_row: np.ndarray) -> tuple[np.ndarr
 
 def main() -> None:
     st.set_page_config(page_title="All Models Comparator", layout="wide")
-    st.title("S11 Comparison: Real vs Antenna NN vs DualResUNet vs SmallResUNet")
+    st.title("S11 Comparison: Real vs Antenna NN vs DualResUNet vs SmallResUNet v2")
 
     # ---- Sidebar ----
     with st.sidebar:
@@ -208,8 +195,6 @@ def main() -> None:
         ant_scaler_path  = st.text_input("Antenna NN scaler",     value="NNModel/scaler.gz")
         dual_model_path  = st.text_input("DualResUNet model",     value="NNModel/trained_model_resunet_dual.pt")
         dual_scaler_path = st.text_input("DualResUNet scaler",    value="NNModel/scaler_resunet_dual.gz")
-        sml_model_path   = st.text_input("SmallResUNet v1 model",  value="NNModel/trained_model_resunet_small.pt")
-        sml_scaler_path  = st.text_input("SmallResUNet v1 scaler", value="NNModel/scaler_resunet_small.gz")
         sml2_model_path  = st.text_input("SmallResUNet v2 model",  value="NNModel/trained_model_resunet_small_v2.pt")
         sml2_scaler_path = st.text_input("SmallResUNet v2 scaler", value="NNModel/scaler_resunet_small_v2.gz")
 
@@ -247,12 +232,6 @@ def main() -> None:
         dual_model = None
 
     try:
-        sml_model, sml_scaler = load_small_resunet(sml_model_path, sml_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"SmallResUNet v1 could not be loaded: {e}")
-        sml_model = None
-
-    try:
         sml2_model, sml2_scaler = load_small_resunet_v2(sml2_model_path, sml2_scaler_path, target_len)
     except Exception as e:
         st.warning(f"SmallResUNet v2 could not be loaded: {e}")
@@ -267,7 +246,6 @@ def main() -> None:
 
     real_ant,  imag_ant  = get_curve(ant_model,  ant_scaler)
     real_dual, imag_dual = get_curve(dual_model, dual_scaler)
-    real_sml,  imag_sml  = get_curve(sml_model,  sml_scaler)
     real_sml2, imag_sml2 = get_curve(sml2_model, sml2_scaler)
 
     # ---- Convert to display space ----
@@ -280,7 +258,6 @@ def main() -> None:
     y_true = display(real_true, imag_true)
     y_ant  = display(real_ant,  imag_ant)
     y_dual = display(real_dual, imag_dual)
-    y_sml  = display(real_sml,  imag_sml)
     y_sml2 = display(real_sml2, imag_sml2)
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
@@ -295,10 +272,9 @@ def main() -> None:
 
     ant_m  = metrics_row(y_ant,  "Antenna NN")
     dual_m = metrics_row(y_dual, "DualResUNet")
-    sml_m  = metrics_row(y_sml,  "Small v1")
     sml2_m = metrics_row(y_sml2, "Small v2")
 
-    all_metrics = {**ant_m, **dual_m, **sml_m, **sml2_m}
+    all_metrics = {**ant_m, **dual_m, **sml2_m}
     cols = st.columns(2 + len(all_metrics))
     cols[0].metric("Dataset", dataset_label)
     cols[1].metric("Sample", idx)
@@ -316,9 +292,6 @@ def main() -> None:
     if y_dual is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_dual, mode="lines", name="DualResUNet (base_ch=64)",
                                  line=dict(width=2, dash="dot", color="firebrick")))
-    if y_sml is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_sml, mode="lines", name="Small v1 (base_ch=32)",
-                                 line=dict(width=2, dash="dashdot", color="seagreen")))
     if y_sml2 is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_sml2, mode="lines", name="Small v2 (base_ch=48)",
                                  line=dict(width=2, dash="longdash", color="darkorange")))
@@ -343,7 +316,6 @@ def main() -> None:
 |-------|---------|--------|------------|--------|
 | Antenna NN | — | ~small | MSE | — |
 | DualResUNet | 64 | ~1.5M | 6 (ri, mag_db, slope, curv, passivity, hilbert) | 300 |
-| Small v1 | 32 | 193k | 4 (ri, mag_db, slope, passivity) | 150 — underfits |
 | Small v2 | 48 | ~450k | 5 (ri, mag_db, slope, curv, passivity) | 250 |
         """)
 
@@ -354,7 +326,6 @@ def main() -> None:
     stat_models = {
         "Antenna NN":  (ant_model_path,  ant_scaler_path),
         "DualResUNet": (dual_model_path, dual_scaler_path),
-        "Small v1":    (sml_model_path,  sml_scaler_path),
         "Small v2":    (sml2_model_path, sml2_scaler_path),
     }
 
@@ -404,7 +375,6 @@ def main() -> None:
         colors_box = {
             "Antenna NN": "royalblue",
             "DualResUNet": "firebrick",
-            "Small v1": "seagreen",
             "Small v2": "darkorange",
         }
         fig3 = go.Figure()
@@ -429,7 +399,6 @@ def main() -> None:
 
     history_files = {
         "DualResUNet":  PROJECT_ROOT / "NNModel" / "history_resunet_dual.csv",
-        "Small v1":     PROJECT_ROOT / "NNModel" / "history_resunet_small.csv",
         "Small v2":     PROJECT_ROOT / "NNModel" / "history_resunet_small_v2.csv",
     }
 
@@ -443,7 +412,7 @@ def main() -> None:
             default=list(available.keys()),
         )
 
-        colors = {"DualResUNet": "firebrick", "Small v1": "seagreen", "Small v2": "darkorange"}
+        colors = {"DualResUNet": "firebrick", "Small v2": "darkorange"}
         fig2 = go.Figure()
 
         for name in selected_histories:
