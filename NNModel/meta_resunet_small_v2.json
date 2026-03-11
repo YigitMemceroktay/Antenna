@@ -1,0 +1,25 @@
+{
+  "model": "SmallResUNet1DV2",
+  "dataset": "old_excel",
+  "base_channels": 48,
+  "trainable_params": 430274,
+  "changes_vs_v1": {
+    "base_ch": "32 \u2192 48  (bottleneck 128 \u2192 192 ch)",
+    "cond_mlp": "11\u219264\u219232 \u2192 11\u219296\u219248",
+    "w_curv": "removed \u2192 0.03  (re-added: fixes flat prediction on sharp dips)",
+    "epochs": "150 \u2192 250"
+  },
+  "loss_weights": {
+    "w_ri": 0.2,
+    "w_mag_db": 1.0,
+    "w_slope": 0.1,
+    "w_curv": 0.03,
+    "w_passivity": 0.05
+  },
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.04482033918611705,
+  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_small_v2.pt",
+  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_small_v2.gz"
+}
