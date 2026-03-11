@@ -56,6 +56,60 @@ def rse(pred: np.ndarray, true: np.ndarray, eps: float = 1e-6) -> float:
     return float(np.mean(((pred - true) ** 2) / (true**2 + eps)))
 
 
+def rse_per_sample(pred: np.ndarray, true: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+    """RSE for each sample individually. pred/true shape: (N, L)"""
+    return np.mean(((pred - true) ** 2) / (true**2 + eps), axis=1)
+
+
+def mse_per_sample(pred: np.ndarray, true: np.ndarray) -> np.ndarray:
+    return np.mean((pred - true) ** 2, axis=1)
+
+
+@st.cache_data(show_spinner="Computing dataset statistics...")
+def compute_dataset_stats(
+    x_all: np.ndarray,
+    real_all: np.ndarray,
+    imag_all: np.ndarray,
+    model_name: str,
+    model_path: str,
+    scaler_path: str,
+    target_len: int,
+) -> dict:
+    """Run inference on the full dataset and return per-sample MSE and RSE arrays."""
+    try:
+        scaler = joblib.load(PROJECT_ROOT / scaler_path)
+        if model_name == "Antenna NN":
+            m = AntennaNeuralNet()
+        elif model_name == "DualResUNet":
+            m = DualResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+        elif model_name == "Small v1":
+            m = SmallResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+        elif model_name == "Small v2":
+            m = SmallResUNet1DV2(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+        else:
+            return {}
+        m.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
+        m.eval()
+
+        x_scaled = scaler.transform(x_all).astype(np.float32)
+        with torch.no_grad():
+            out = m(torch.tensor(x_scaled)).numpy()  # (N, 2, L)
+
+        real_pred = out[:, 0, :]
+        imag_pred = out[:, 1, :]
+        mag_pred = to_mag(real_pred, imag_pred)
+        mag_true = to_mag(real_all, imag_all)
+        db_pred  = to_db(mag_pred)
+        db_true  = to_db(mag_true)
+
+        return {
+            "rse":  rse_per_sample(mag_pred, mag_true),
+            "mse":  mse_per_sample(db_pred,  db_true),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 # ---------------------------------------------------------------------------
 # Cached loaders
 # ---------------------------------------------------------------------------
@@ -292,6 +346,83 @@ def main() -> None:
 | Small v1 | 32 | 193k | 4 (ri, mag_db, slope, passivity) | 150 — underfits |
 | Small v2 | 48 | ~450k | 5 (ri, mag_db, slope, curv, passivity) | 250 |
         """)
+
+    # ---- Dataset-wide statistics ----
+    st.subheader("Dataset statistics (all samples)")
+    st.caption("Runs inference on the full dataset. First load may take a moment.")
+
+    stat_models = {
+        "Antenna NN":  (ant_model_path,  ant_scaler_path),
+        "DualResUNet": (dual_model_path, dual_scaler_path),
+        "Small v1":    (sml_model_path,  sml_scaler_path),
+        "Small v2":    (sml2_model_path, sml2_scaler_path),
+    }
+
+    x_all_np   = x_df.values.astype(np.float32)
+    real_all_np = real_all
+    imag_all_np = imag_all
+
+    all_stats = {}
+    for name, (mp, sp) in stat_models.items():
+        stats = compute_dataset_stats(
+            x_all_np, real_all_np, imag_all_np,
+            model_name=name, model_path=mp, scaler_path=sp,
+            target_len=int(real_all_np.shape[1]),
+        )
+        if stats and "error" not in stats:
+            all_stats[name] = stats
+
+    if all_stats:
+        percentiles = [0, 25, 50, 75, 100]
+
+        # --- RSE table ---
+        st.markdown("**RSE across dataset** (lower is better)")
+        rse_rows = []
+        for name, stats in all_stats.items():
+            arr = stats["rse"]
+            row = {"Model": name, "Mean": float(np.mean(arr))}
+            for p in percentiles:
+                row[f"p{p}"] = float(np.percentile(arr, p))
+            rse_rows.append(row)
+        rse_df = pd.DataFrame(rse_rows).set_index("Model")
+        st.dataframe(rse_df.style.format("{:.5f}"), use_container_width=True)
+
+        # --- MSE table ---
+        st.markdown("**MSE (dB) across dataset**")
+        mse_rows = []
+        for name, stats in all_stats.items():
+            arr = stats["mse"]
+            row = {"Model": name, "Mean": float(np.mean(arr))}
+            for p in percentiles:
+                row[f"p{p}"] = float(np.percentile(arr, p))
+            mse_rows.append(row)
+        mse_df = pd.DataFrame(mse_rows).set_index("Model")
+        st.dataframe(mse_df.style.format("{:.5f}"), use_container_width=True)
+
+        # --- Boxplot (RSE) ---
+        st.markdown("**RSE distribution — boxplot**")
+        colors_box = {
+            "Antenna NN": "royalblue",
+            "DualResUNet": "firebrick",
+            "Small v1": "seagreen",
+            "Small v2": "darkorange",
+        }
+        fig3 = go.Figure()
+        for name, stats in all_stats.items():
+            fig3.add_trace(go.Box(
+                y=stats["rse"],
+                name=name,
+                marker_color=colors_box.get(name, "gray"),
+                boxmean=True,
+            ))
+        fig3.update_layout(
+            yaxis_title="RSE",
+            template="plotly_white",
+            height=400,
+            showlegend=False,
+        )
+        st.plotly_chart(fig3, use_container_width=True)
+        st.caption("Box = 25-75th percentile  |  Line = median  |  X = mean  |  Whiskers = min/max")
 
     # ---- Training curves ----
     st.subheader("Training curves (train vs val loss)")
