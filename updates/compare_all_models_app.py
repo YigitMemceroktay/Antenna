@@ -23,6 +23,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 import torch
+from scipy.ndimage import gaussian_filter1d
+from scipy.signal import savgol_filter
 from sklearn.exceptions import InconsistentVersionWarning
 
 THIS_DIR = Path(__file__).resolve().parent
@@ -54,6 +56,32 @@ def rse(pred: np.ndarray, true: np.ndarray, eps: float = 1e-6) -> float:
     return float(np.mean(((pred - true) ** 2) / (true**2 + eps)))
 
 
+def smooth_1d(y: np.ndarray, method: str, strength: float, window: int, poly: int) -> np.ndarray:
+    if method == "none":
+        return y
+    if method == "moving_average":
+        w = max(3, int(window))
+        if w % 2 == 0:
+            w += 1
+        kernel = np.ones(w, dtype=np.float64) / w
+        y_pad = np.pad(y, (w // 2, w // 2), mode="reflect")
+        return np.convolve(y_pad, kernel, mode="valid")
+    if method == "savgol":
+        w = max(5, int(window))
+        if w % 2 == 0:
+            w += 1
+        w = min(w, len(y) - (1 - len(y) % 2))
+        if w <= poly:
+            w = poly + 3 if (poly + 3) % 2 == 1 else poly + 4
+        w = min(w, len(y) - (1 - len(y) % 2))
+        if w < 5:
+            return y
+        return savgol_filter(y, window_length=w, polyorder=min(poly, w - 2), mode="interp")
+    if method == "gaussian":
+        return gaussian_filter1d(y, sigma=max(0.1, float(strength)), mode="reflect")
+    return y
+
+
 def rse_per_sample(pred: np.ndarray, true: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     """RSE for each sample individually. pred/true shape: (N, L)"""
     return np.mean(((pred - true) ** 2) / (true**2 + eps), axis=1)
@@ -72,8 +100,12 @@ def compute_dataset_stats(
     model_path: str,
     scaler_path: str,
     target_len: int,
+    smooth_method: str,
+    smooth_strength: float,
+    smooth_window: int,
+    smooth_poly: int,
 ) -> dict:
-    """Run inference on the full dataset and return per-sample MSE and RSE arrays."""
+    """Run inference on full dataset, apply smoothing, return per-sample MSE and RSE."""
     try:
         scaler = joblib.load(PROJECT_ROOT / scaler_path)
         if model_name == "Antenna NN":
@@ -91,16 +123,27 @@ def compute_dataset_stats(
         with torch.no_grad():
             out = m(torch.tensor(x_scaled)).numpy()  # (N, 2, L)
 
-        real_pred = out[:, 0, :]
-        imag_pred = out[:, 1, :]
-        mag_pred = to_mag(real_pred, imag_pred)
         mag_true = to_mag(real_all, imag_all)
-        db_pred  = to_db(mag_pred)
         db_true  = to_db(mag_true)
 
+        mag_preds, db_preds = [], []
+        for i in range(out.shape[0]):
+            r = out[i, 0, :]
+            im = out[i, 1, :]
+            mag = to_mag(r, im)
+            db  = to_db(mag)
+            if smooth_method != "none":
+                db = smooth_1d(db, smooth_method, smooth_strength, smooth_window, smooth_poly)
+                mag = 10 ** (db / 20.0)
+            mag_preds.append(mag)
+            db_preds.append(db)
+
+        mag_preds = np.array(mag_preds)
+        db_preds  = np.array(db_preds)
+
         return {
-            "rse":  rse_per_sample(mag_pred, mag_true),
-            "mse":  mse_per_sample(db_pred,  db_true),
+            "rse": rse_per_sample(mag_preds, mag_true),
+            "mse": mse_per_sample(db_preds,  db_true),
         }
     except Exception as e:
         return {"error": str(e)}
@@ -190,6 +233,21 @@ def main() -> None:
         trace_label  = st.selectbox("Trace label", ["S11", "Sdd11"], index=0)
         magnitude_db = st.checkbox("Show magnitude in dB", value=True)
 
+        st.subheader("Post-smoothing")
+        apply_smoothing = st.checkbox("Apply smoothing to model outputs", value=False)
+        smooth_method   = st.selectbox("Method", ["none", "gaussian", "savgol", "moving_average"],
+                                       index=1, disabled=not apply_smoothing)
+        smooth_strength = st.slider("Gaussian sigma", 0.1, 6.0, 1.5, 0.1,
+                                    disabled=(not apply_smoothing or smooth_method != "gaussian"))
+        smooth_window   = st.slider("Window length", 5, 51, 11, 2,
+                                    disabled=(not apply_smoothing or smooth_method == "gaussian"))
+        smooth_poly     = st.slider("SavGol polyorder", 2, 5, 3, 1,
+                                    disabled=(not apply_smoothing or smooth_method != "savgol"))
+        _method  = smooth_method  if apply_smoothing else "none"
+        _str     = smooth_strength
+        _win     = smooth_window
+        _poly    = smooth_poly
+
         st.subheader("Model paths")
         ant_model_path   = st.text_input("Antenna NN model",      value="NNModel/trained_model.pt")
         ant_scaler_path  = st.text_input("Antenna NN scaler",     value="NNModel/scaler.gz")
@@ -255,10 +313,15 @@ def main() -> None:
         mag = to_mag(real, imag)
         return to_db(mag) if magnitude_db else mag
 
+    def smooth(y):
+        if y is None:
+            return None
+        return smooth_1d(y, _method, _str, _win, _poly)
+
     y_true = display(real_true, imag_true)
-    y_ant  = display(real_ant,  imag_ant)
-    y_dual = display(real_dual, imag_dual)
-    y_sml2 = display(real_sml2, imag_sml2)
+    y_ant  = smooth(display(real_ant,  imag_ant))
+    y_dual = smooth(display(real_dual, imag_dual))
+    y_sml2 = smooth(display(real_sml2, imag_sml2))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -339,6 +402,8 @@ def main() -> None:
             x_all_np, real_all_np, imag_all_np,
             model_name=name, model_path=mp, scaler_path=sp,
             target_len=int(real_all_np.shape[1]),
+            smooth_method=_method, smooth_strength=_str,
+            smooth_window=_win, smooth_poly=_poly,
         )
         if stats and "error" not in stats:
             all_stats[name] = stats
