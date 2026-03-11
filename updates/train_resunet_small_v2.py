@@ -332,22 +332,10 @@ def train(args: argparse.Namespace) -> None:
     x_val   = torch.tensor(x_scaled[va_idx],  dtype=torch.float32)
     y_val   = torch.tensor(y[va_idx],          dtype=torch.float32)
 
-    device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
+    train_loader = DataLoader(TensorDataset(x_train, y_train), batch_size=args.batch_size, shuffle=True)
+    val_loader   = DataLoader(TensorDataset(x_val,   y_val),   batch_size=args.batch_size, shuffle=False)
 
-    train_loader = DataLoader(
-        TensorDataset(x_train, y_train),
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=args.num_workers,
-        pin_memory=(device.type == "cuda"),
-    )
-    val_loader = DataLoader(
-        TensorDataset(x_val, y_val),
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.num_workers,
-        pin_memory=(device.type == "cuda"),
-    )
+    device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
     model  = SmallResUNet1DV2(
         input_dim=x_train.shape[1],
         target_len=y_train.shape[-1],
@@ -467,7 +455,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--w-curv",        type=float, default=0.03)   # re-added vs v1
     parser.add_argument("--w-passivity",   type=float, default=0.05)
 
-    parser.add_argument("--num-workers",   type=int,   default=4)
     parser.add_argument("--log-every",     type=int,   default=10)
     parser.add_argument("--cpu",           action="store_true")
     return parser.parse_args()
