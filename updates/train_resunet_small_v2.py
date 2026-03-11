@@ -332,8 +332,6 @@ def train(args: argparse.Namespace) -> None:
     x_val   = torch.tensor(x_scaled[va_idx],  dtype=torch.float32)
     y_val   = torch.tensor(y[va_idx],          dtype=torch.float32)
 
-    device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
-
     train_loader = DataLoader(
         TensorDataset(x_train, y_train),
         batch_size=args.batch_size,
@@ -348,6 +346,8 @@ def train(args: argparse.Namespace) -> None:
         num_workers=args.num_workers,
         pin_memory=(device.type == "cuda"),
     )
+
+    device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
     model  = SmallResUNet1DV2(
         input_dim=x_train.shape[1],
         target_len=y_train.shape[-1],
