@@ -1,0 +1,26 @@
+{
+  "model": "SmallResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 32,
+  "trainable_params": 192642,
+  "reductions_vs_dual": {
+    "base_ch": "64 \u2192 32",
+    "cond_mlp": "11\u2192128\u219264 \u2192 11\u219264\u219232 (one hidden layer removed)",
+    "pos_channels": "16 \u2192 8 (4 harmonics instead of 8)",
+    "loss_terms": "6 \u2192 4 (removed w_curv and w_hilbert)",
+    "hilbert_warmup": "removed",
+    "default_epochs": "220 \u2192 150"
+  },
+  "loss_weights": {
+    "w_ri": 0.2,
+    "w_mag_db": 1.0,
+    "w_slope": 0.1,
+    "w_passivity": 0.05
+  },
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.21994535205885768,
+  "model_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/trained_model_resunet_small.pt",
+  "scaler_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/scaler_resunet_small.gz"
+}
