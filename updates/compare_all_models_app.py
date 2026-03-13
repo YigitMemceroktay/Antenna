@@ -1,11 +1,12 @@
 """
 compare_all_models_app.py
 
-Compares four models side by side on the same sample:
+Compares five models side by side on the same sample:
   1. Real data (ground truth)
   2. Antenna NN         (benchmark)
   3. DualResUNet        (base_ch=64, 6-term loss, 300 epochs)
   4. SmallResUNet v2    (base_ch=48, 5-term loss, 250 epochs)
+  5. BigResUNet         (base_ch=128, 5-term loss, 300 epochs)
 
 Run:
     python3 -m streamlit run updates/compare_all_models_app.py
@@ -236,7 +237,7 @@ def predict(model: torch.nn.Module, scaler, x_row: np.ndarray) -> tuple[np.ndarr
 
 def main() -> None:
     st.set_page_config(page_title="All Models Comparator", layout="wide")
-    st.title("S11 Comparison: Real vs Antenna NN vs DualResUNet vs SmallResUNet v2")
+    st.title("S11 Comparison: Real vs Antenna NN vs DualResUNet vs SmallResUNet v2 vs BigResUNet")
 
     # ---- Sidebar ----
     with st.sidebar:
@@ -346,19 +347,27 @@ def main() -> None:
     y_big  = smooth(display(real_big,  imag_big))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
-    # ---- Metrics ----
-    def metrics_row(y_pred, label):
-        if y_pred is None:
+    # ---- Metrics (consistent with compute_dataset_stats: RSE on magnitude, MSE on dB) ----
+    mag_true_sample = to_mag(real_true, imag_true)
+    db_true_sample  = to_db(mag_true_sample)
+
+    def metrics_row(real_pred, imag_pred, label):
+        if real_pred is None:
             return {}
+        mag_p = to_mag(real_pred, imag_pred)
+        db_p  = to_db(mag_p)
+        if _method != "none":
+            db_p  = smooth_1d(db_p, _method, _str, _win, _poly)
+            mag_p = 10 ** (db_p / 20.0)
         return {
-            f"{label} MSE": f"{np.mean((y_pred - y_true)**2):.6f}",
-            f"{label} RSE": f"{rse(y_pred, y_true):.6f}",
+            f"{label} MSE": f"{np.mean((db_p - db_true_sample)**2):.6f}",
+            f"{label} RSE": f"{float(np.mean(((mag_p - mag_true_sample)**2) / (mag_true_sample**2 + 1e-6))):.6f}",
         }
 
-    ant_m  = metrics_row(y_ant,  "Antenna NN")
-    dual_m = metrics_row(y_dual, "DualResUNet")
-    sml2_m = metrics_row(y_sml2, "Small v2")
-    big_m  = metrics_row(y_big,  "Big")
+    ant_m  = metrics_row(real_ant,  imag_ant,  "Antenna NN")
+    dual_m = metrics_row(real_dual, imag_dual, "DualResUNet")
+    sml2_m = metrics_row(real_sml2, imag_sml2, "Small v2")
+    big_m  = metrics_row(real_big,  imag_big,  "Big")
 
     all_metrics = {**ant_m, **dual_m, **sml2_m, **big_m}
     cols = st.columns(2 + len(all_metrics))
@@ -371,7 +380,7 @@ def main() -> None:
     x_axis = np.arange(len(y_true))
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x_axis, y=y_true, mode="lines", name=f"Real {trace_label}",
-                             line=dict(width=3, color="black")))
+                             line=dict(width=3, color="gold")))
     if y_ant is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_ant, mode="lines", name="Antenna NN",
                                  line=dict(width=2, dash="dash", color="royalblue")))
@@ -487,6 +496,82 @@ def main() -> None:
         )
         st.plotly_chart(fig3, use_container_width=True)
         st.caption("Box = 25-75th percentile  |  Line = median  |  X = mean  |  Whiskers = min/max")
+
+        # --- Worst samples inspector ---
+        st.markdown("---")
+        st.markdown("**Worst samples inspector**")
+        st.caption("Sort all dataset samples by RSE for a chosen model. Useful for identifying geometrically extreme cases.")
+        col_ws1, col_ws2 = st.columns([2, 1])
+        with col_ws1:
+            worst_model = st.selectbox("Sort by model (RSE)", list(all_stats.keys()), key="worst_model")
+        with col_ws2:
+            top_n = st.slider("Top-N worst", 1, 20, 5, key="top_n")
+
+        worst_rse = all_stats[worst_model]["rse"]
+        worst_idx = np.argsort(worst_rse)[::-1][:top_n]
+
+        # Table: index + RSE per model + geometry
+        rows = []
+        for rank, si in enumerate(worst_idx):
+            row = {"Rank": rank + 1, "Sample idx": int(si)}
+            for mname, st_data in all_stats.items():
+                row[f"RSE ({mname})"] = float(st_data["rse"][si])
+            geom = x_df.iloc[int(si)].to_dict()
+            row.update(geom)
+            rows.append(row)
+        worst_df = pd.DataFrame(rows).set_index("Rank")
+        rse_cols = [c for c in worst_df.columns if c.startswith("RSE")]
+        geom_cols = [c for c in worst_df.columns if c not in rse_cols and c != "Sample idx"]
+        st.dataframe(
+            worst_df.style.format(
+                {c: "{:.5f}" for c in rse_cols} | {c: "{:.4g}" for c in geom_cols}
+            ),
+            use_container_width=True,
+        )
+
+        # Plot: overlay worst samples for ground truth + chosen model
+        with st.expander(f"Plot worst {top_n} samples — ground truth vs {worst_model}"):
+            colors_worst = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#3498db",
+                            "#9b59b6", "#1abc9c", "#e91e63", "#ff5722", "#607d8b"]
+            fig_w = go.Figure()
+            for rank, si in enumerate(worst_idx):
+                color = colors_worst[rank % len(colors_worst)]
+                si = int(si)
+                y_gt = display(real_all[si], imag_all[si])
+                fig_w.add_trace(go.Scatter(
+                    x=x_axis, y=y_gt, mode="lines",
+                    name=f"#{si} GT",
+                    line=dict(color=color, width=2),
+                    legendgroup=str(si),
+                ))
+
+                # Run inference for this sample
+                x_row_si = x_df.iloc[si].values.astype(np.float32)
+                model_map = {
+                    "Antenna NN": (ant_model, ant_scaler),
+                    "DualResUNet": (dual_model, dual_scaler),
+                    "Small v2": (sml2_model, sml2_scaler),
+                    "Big": (big_model, big_scaler),
+                }
+                m_obj, m_scaler = model_map.get(worst_model, (None, None))
+                if m_obj is not None:
+                    r_p, i_p = predict(m_obj, m_scaler, x_row_si)
+                    y_p = smooth(display(r_p, i_p))
+                    rse_val = worst_rse[si]
+                    fig_w.add_trace(go.Scatter(
+                        x=x_axis, y=y_p, mode="lines",
+                        name=f"#{si} pred (RSE={rse_val:.4f})",
+                        line=dict(color=color, width=1.5, dash="dash"),
+                        legendgroup=str(si),
+                    ))
+            fig_w.update_layout(
+                xaxis_title="Frequency point index",
+                yaxis_title=y_label,
+                template="plotly_white",
+                height=500,
+                legend=dict(orientation="v"),
+            )
+            st.plotly_chart(fig_w, use_container_width=True)
 
     # ---- Training curves ----
     st.subheader("Training curves (train vs val loss)")
