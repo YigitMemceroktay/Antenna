@@ -3,8 +3,8 @@
   "dataset": "old_excel",
   "base_channels": 128,
   "trainable_params": 3035650,
-  "motivation": "Big v6: ReduceLROnPlateau + Optuna HPO hyperparameters (50 trials, 150 ep each).",
-  "stopped_epoch": 245,
+  "motivation": "Big v6: v4 (CosineAnnealingLR + early stopping) + Optuna HPO hyperparameters.",
+  "stopped_epoch": 268,
   "loss_weights": {
     "w_ri": 0.2482,
     "w_mag": 1.0,
@@ -18,7 +18,7 @@
   "n_samples": 5000,
   "n_train": 4000,
   "n_val": 1000,
-  "best_val_loss": 0.03058846163312121,
-  "model_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/trained_model_resunet_v6.pt",
-  "scaler_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/scaler_resunet_v6.gz"
+  "best_val_loss": 0.028311144361006364,
+  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_v6.pt",
+  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_v6.gz"
 }
