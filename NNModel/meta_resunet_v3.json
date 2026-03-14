@@ -1,0 +1,25 @@
+{
+  "model": "BigResUNetV3",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "dropout": 0.1,
+  "trainable_params": 3035650,
+  "motivation": "Big v2 (SmoothResUNet1D) overfitted: old_excel RSE=0.015 but LHS test RSE=0.027. Fix: Dropout(0.1) + weight_decay=5e-4 + early stopping (patience=40).",
+  "stopped_epoch": 153,
+  "loss_weights": {
+    "w_ri": 0.2,
+    "w_mag": 1.0,
+    "mag_loss": "magnitude RSE",
+    "w_slope": 0.1,
+    "w_curv": 0.03,
+    "w_passivity": 0.05
+  },
+  "smooth_filter_size": 41,
+  "fixed_sigma": 1.527,
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.0502896276593674,
+  "model_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/trained_model_resunet_v3.pt",
+  "scaler_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/scaler_resunet_v3.gz"
+}

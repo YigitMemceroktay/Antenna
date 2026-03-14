@@ -39,7 +39,6 @@ from train_resunet_dual import DualResUNet1D, INPUT_COLUMNS
 from train_resunet_small_v2 import SmallResUNet1DV2
 from train_resunet_big import BigResUNet1D
 from train_resunet_smooth import SmoothResUNet1D
-from train_resunet_v3 import BigResUNetV3
 
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
@@ -124,8 +123,8 @@ def compute_dataset_stats(
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Big v2":
             m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name == "Big v3":
-            m = BigResUNetV3(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+        elif model_name == "Big v4":
+            m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         else:
             return {}
         m.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
@@ -267,9 +266,9 @@ def load_smooth_resunet(model_path: str, scaler_path: str, target_len: int):
 
 
 @st.cache_resource
-def load_v3_resunet(model_path: str, scaler_path: str, target_len: int):
+def load_v4_resunet(model_path: str, scaler_path: str, target_len: int):
     scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = BigResUNetV3(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+    model  = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
     model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
     model.eval()
     return model, scaler
@@ -328,8 +327,8 @@ def main() -> None:
         big_scaler_path   = st.text_input("Big v1 scaler",  value="NNModel/scaler_resunet_big.gz")
         big2_model_path   = st.text_input("Big v2 model",   value="NNModel/trained_model_resunet_smooth.pt")
         big2_scaler_path  = st.text_input("Big v2 scaler",  value="NNModel/scaler_resunet_smooth.gz")
-        big3_model_path   = st.text_input("Big v3 model",   value="NNModel/trained_model_resunet_v3.pt")
-        big3_scaler_path  = st.text_input("Big v3 scaler",  value="NNModel/scaler_resunet_v3.gz")
+        big4_model_path   = st.text_input("Big v4 model",   value="NNModel/trained_model_resunet_v4.pt")
+        big4_scaler_path  = st.text_input("Big v4 scaler",  value="NNModel/scaler_resunet_v4.gz")
 
     # ---- Load data ----
     if dataset == "lhs":
@@ -383,10 +382,10 @@ def main() -> None:
         big2_model = None
 
     try:
-        big3_model, big3_scaler = load_v3_resunet(big3_model_path, big3_scaler_path, target_len)
+        big4_model, big4_scaler = load_v4_resunet(big4_model_path, big4_scaler_path, target_len)
     except Exception as e:
-        st.warning(f"Big v3 could not be loaded: {e}")
-        big3_model = None
+        st.warning(f"Big v4 could not be loaded: {e}")
+        big4_model = None
 
     # ---- Predictions ----
     def get_curve(model, scaler):
@@ -400,7 +399,7 @@ def main() -> None:
     real_sml2, imag_sml2 = get_curve(sml2_model, sml2_scaler)
     real_big,  imag_big  = get_curve(big_model,  big_scaler)
     real_big2, imag_big2 = get_curve(big2_model, big2_scaler)
-    real_big3, imag_big3 = get_curve(big3_model, big3_scaler)
+    real_big4, imag_big4 = get_curve(big4_model, big4_scaler)
 
     # ---- Convert to display space ----
     def display(real, imag):
@@ -420,7 +419,7 @@ def main() -> None:
     y_sml2 = smooth(display(real_sml2, imag_sml2))
     y_big  = smooth(display(real_big,  imag_big))
     y_big2 = smooth(display(real_big2, imag_big2))
-    y_big3 = smooth(display(real_big3, imag_big3))
+    y_big4 = smooth(display(real_big4, imag_big4))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -445,10 +444,10 @@ def main() -> None:
     sml2_m = metrics_row(real_sml2, imag_sml2, "Small v2")
     big_m  = metrics_row(real_big,  imag_big,  "Big v1")
     big2_m = metrics_row(real_big2, imag_big2, "Big v2")
-    big3_m = metrics_row(real_big3, imag_big3, "Big v3")
+    big4_m = metrics_row(real_big4, imag_big4, "Big v4")
 
-    _model_labels   = ["Antenna NN", "DualResUNet", "Small v2", "Big v1", "Big v2", "Big v3"]
-    _metrics_list   = [ant_m, dual_m, sml2_m, big_m, big2_m, big3_m]
+    _model_labels   = ["Antenna NN", "DualResUNet", "Small v2", "Big v1", "Big v2", "Big v4"]
+    _metrics_list   = [ant_m, dual_m, sml2_m, big_m, big2_m, big4_m]
     n_cols = 1 + len(_model_labels)
     row1 = st.columns(n_cols)
     row2 = st.columns(n_cols)
@@ -478,8 +477,8 @@ def main() -> None:
     if y_big2 is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_big2, mode="lines", name="Big v2 (mag RSE loss + smooth)",
                                  line=dict(width=2, dash="dot", color="deeppink")))
-    if y_big3 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big3, mode="lines", name="Big v3 (combined data + dropout)",
+    if y_big4 is not None:
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big4, mode="lines", name="Big v4 (v2 + early stopping, ep=368)",
                                  line=dict(width=2, dash="longdashdot", color="teal")))
 
     fig.update_layout(
@@ -505,7 +504,7 @@ def main() -> None:
 | Small v2 | 48 | ~450k | 5 (ri, mag_db, slope, curv, passivity) | 250 |
 | Big v1 | 128 | ~6M | 5 (ri, **dB RSE**, slope, curv, passivity) | 300 |
 | Big v2 | 128 | ~6M | 5 (ri, **mag RSE**, slope, curv, passivity) + fixed smooth (σ=1.527) | 300 |
-| Big v3 | 128 | ~6M | same as v2 + **combined dataset** (old\_excel+LHS) + dropout(0.1) + wd=5e-4 | 250 |
+| Big v4 | 128 | ~6M | identical to v2 + **early stopping** (patience=40, stopped ep 368) | 368 |
         """)
 
     # ---- Dataset-wide statistics ----
@@ -545,7 +544,7 @@ def main() -> None:
         "Small v2":    (sml2_model_path, sml2_scaler_path),
         "Big v1":      (big_model_path,  big_scaler_path),
         "Big v2":      (big2_model_path, big2_scaler_path),
-        "Big v3":      (big3_model_path, big3_scaler_path),
+        "Big v4":      (big4_model_path, big4_scaler_path),
     }
 
     all_stats = {}
@@ -595,7 +594,7 @@ def main() -> None:
             "Small v2": "darkorange",
             "Big v1": "purple",
             "Big v2": "deeppink",
-            "Big v3": "teal",
+            "Big v4": "teal",
         }
         fig3 = go.Figure()
         for name, stats in all_stats.items():
@@ -670,7 +669,7 @@ def main() -> None:
                     "Small v2": (sml2_model, sml2_scaler),
                     "Big v1": (big_model, big_scaler),
                     "Big v2": (big2_model, big2_scaler),
-                    "Big v3": (big3_model, big3_scaler),
+                    "Big v4": (big4_model, big4_scaler),
                 }
                 m_obj, m_scaler = model_map.get(worst_model, (None, None))
                 if m_obj is not None:
@@ -700,7 +699,7 @@ def main() -> None:
         "Small v2":     PROJECT_ROOT / "NNModel" / "history_resunet_small_v2.csv",
         "Big v1":       PROJECT_ROOT / "NNModel" / "history_resunet_big.csv",
         "Big v2":       PROJECT_ROOT / "NNModel" / "history_resunet_smooth.csv",
-        "Big v3":       PROJECT_ROOT / "NNModel" / "history_resunet_v3.csv",
+        "Big v4":       PROJECT_ROOT / "NNModel" / "history_resunet_v4.csv",
     }
 
     available = {name: path for name, path in history_files.items() if path.exists()}
@@ -713,7 +712,7 @@ def main() -> None:
             default=list(available.keys()),
         )
 
-        colors = {"DualResUNet": "firebrick", "Small v2": "darkorange", "Big v1": "purple", "Big v2": "deeppink", "Big v3": "teal"}
+        colors = {"DualResUNet": "firebrick", "Small v2": "darkorange", "Big v1": "purple", "Big v2": "deeppink", "Big v4": "teal"}
         fig2 = go.Figure()
 
         for name in selected_histories:
