@@ -152,8 +152,9 @@ def compute_dataset_stats(
         db_preds  = np.array(db_preds)
 
         return {
-            "rse": rse_per_sample(mag_preds, mag_true),
-            "mse": mse_per_sample(db_preds,  db_true),
+            "rse":    rse_per_sample(mag_preds, mag_true),
+            "rse_db": rse_per_sample(db_preds,  db_true),
+            "mse":    mse_per_sample(db_preds,  db_true),
         }
     except Exception as e:
         return {"error": str(e)}
@@ -452,29 +453,33 @@ def main() -> None:
         if _method != "none":
             db_p  = smooth_1d(db_p, _method, _str, _win, _poly)
             mag_p = 10 ** (db_p / 20.0)
+        rse_db_val = float(np.mean(((db_p - db_true_sample)**2) / (db_true_sample**2 + 1e-6)))
         return {
-            f"{label} MSE": f"{np.mean((db_p - db_true_sample)**2):.6f}",
-            f"{label} RSE": f"{float(np.mean(((mag_p - mag_true_sample)**2) / (mag_true_sample**2 + 1e-6))):.6f}",
+            f"{label} MSE":    f"{np.mean((db_p - db_true_sample)**2):.6f}",
+            f"{label} RSE":    f"{float(np.mean(((mag_p - mag_true_sample)**2) / (mag_true_sample**2 + 1e-6))):.6f}",
+            f"{label} RSE dB": f"{rse_db_val:.6f}",
         }
 
     ant_m  = metrics_row(real_ant,  imag_ant,  "Antenna NN")
     dual_m = metrics_row(real_dual, imag_dual, "DualResUNet")
-    sml2_m = metrics_row(real_sml2, imag_sml2, "Small v2")
     big_m  = metrics_row(real_big,  imag_big,  "Big v1")
     big2_m = metrics_row(real_big2, imag_big2, "Big v2")
     big4_m = metrics_row(real_big4, imag_big4, "Big v4")
     big6_m = metrics_row(real_big6, imag_big6, "Big v6")
 
-    _model_labels   = ["Antenna NN", "DualResUNet", "Small v2", "Big v1", "Big v2", "Big v4", "Big v6"]
-    _metrics_list   = [ant_m, dual_m, sml2_m, big_m, big2_m, big4_m, big6_m]
+    _model_labels   = ["Antenna NN", "DualResUNet", "Big v1", "Big v2", "Big v4", "Big v6"]
+    _metrics_list   = [ant_m, dual_m, big_m, big2_m, big4_m, big6_m]
     n_cols = 1 + len(_model_labels)
     row1 = st.columns(n_cols)
     row2 = st.columns(n_cols)
+    row3 = st.columns(n_cols)
     row1[0].metric("Dataset", dataset_label)
     row2[0].metric("Sample",  idx)
+    row3[0].metric("", "")
     for i, (lbl, m) in enumerate(zip(_model_labels, _metrics_list)):
         row1[i + 1].metric(f"{lbl} MSE", m.get(f"{lbl} MSE", "—"))
         row2[i + 1].metric(f"{lbl} RSE (mag)", m.get(f"{lbl} RSE", "—"))
+        row3[i + 1].metric(f"{lbl} RSE (dB)", m.get(f"{lbl} RSE dB", "—"))
 
     # ---- Plot ----
     x_axis = np.arange(len(y_true))
@@ -487,9 +492,6 @@ def main() -> None:
     if y_dual is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_dual, mode="lines", name="DualResUNet (base_ch=64)",
                                  line=dict(width=2, dash="dot", color="firebrick")))
-    if y_sml2 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_sml2, mode="lines", name="Small v2 (base_ch=48)",
-                                 line=dict(width=2, dash="longdash", color="darkorange")))
     if y_big is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_big, mode="lines", name="Big v1 (dB RSE loss)",
                                  line=dict(width=2, dash="dash", color="purple")))
@@ -564,7 +566,6 @@ def main() -> None:
     stat_models = {
         "Antenna NN":  (ant_model_path,  ant_scaler_path),
         "DualResUNet": (dual_model_path, dual_scaler_path),
-        "Small v2":    (sml2_model_path, sml2_scaler_path),
         "Big v1":      (big_model_path,  big_scaler_path),
         "Big v2":      (big2_model_path, big2_scaler_path),
         "Big v4":      (big4_model_path, big4_scaler_path),
@@ -587,10 +588,16 @@ def main() -> None:
         percentiles = [0, 25, 50, 75, 100]
 
         # --- RSE table ---
-        st.markdown("**RSE (magnitude) across dataset** (lower is better)")
+        rse_metric = st.radio(
+            "RSE metric", ["magnitude (mag)", "dB"],
+            horizontal=True, key="rse_metric_radio",
+        )
+        rse_key   = "rse"    if rse_metric == "magnitude (mag)" else "rse_db"
+        rse_label = "RSE (magnitude)" if rse_metric == "magnitude (mag)" else "RSE (dB)"
+        st.markdown(f"**{rse_label} across dataset** (lower is better)")
         rse_rows = []
         for name, stats in all_stats.items():
-            arr = stats["rse"]
+            arr = stats[rse_key]
             row = {"Model": name, "Mean": float(np.mean(arr))}
             for p in percentiles:
                 row[f"p{p}"] = float(np.percentile(arr, p))
@@ -611,11 +618,10 @@ def main() -> None:
         st.dataframe(mse_df.style.format("{:.5f}"), use_container_width=True)
 
         # --- Boxplot (RSE) ---
-        st.markdown("**RSE distribution — boxplot**")
+        st.markdown(f"**{rse_label} distribution — boxplot**")
         colors_box = {
             "Antenna NN": "royalblue",
             "DualResUNet": "firebrick",
-            "Small v2": "darkorange",
             "Big v1": "purple",
             "Big v2": "deeppink",
             "Big v4": "teal",
@@ -624,13 +630,13 @@ def main() -> None:
         fig3 = go.Figure()
         for name, stats in all_stats.items():
             fig3.add_trace(go.Box(
-                y=stats["rse"],
+                y=stats[rse_key],
                 name=name,
                 marker_color=colors_box.get(name, "gray"),
                 boxmean=True,
             ))
         fig3.update_layout(
-            yaxis_title="RSE (magnitude)",
+            yaxis_title=rse_label,
             template="plotly_white",
             height=400,
             showlegend=False,
@@ -691,7 +697,6 @@ def main() -> None:
                 model_map = {
                     "Antenna NN": (ant_model, ant_scaler),
                     "DualResUNet": (dual_model, dual_scaler),
-                    "Small v2": (sml2_model, sml2_scaler),
                     "Big v1": (big_model, big_scaler),
                     "Big v2": (big2_model, big2_scaler),
                     "Big v4": (big4_model, big4_scaler),

@@ -1,0 +1,24 @@
+{
+  "model": "SmoothResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "trainable_params": 3035650,
+  "motivation": "Big v6: ReduceLROnPlateau + Optuna HPO hyperparameters (50 trials, 150 ep each).",
+  "stopped_epoch": 245,
+  "loss_weights": {
+    "w_ri": 0.2482,
+    "w_mag": 1.0,
+    "mag_loss": "magnitude RSE",
+    "w_slope": 0.0017,
+    "w_curv": 0.01856,
+    "w_passivity": 0.19933
+  },
+  "smooth_filter_size": 41,
+  "fixed_sigma": 1.5270000128282595,
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.03058846163312121,
+  "model_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/trained_model_resunet_v6.pt",
+  "scaler_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/scaler_resunet_v6.gz"
+}

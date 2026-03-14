@@ -1,7 +1,7 @@
 """
 train_resunet_big_v5.py  —  BigResUNet v5 (= Big v4 + ReduceLROnPlateau)
 
-Big v4 had large val loss spikes due to CosineAnnealingLR being blind to training dynamics.
+Hypothesis:Big v4 had large val loss spikes due to CosineAnnealingLR being blind to training dynamics.
 Fix: replace with ReduceLROnPlateau (factor=0.5, patience=15) → LR halves when val plateaus.
 
 COMPARISON TABLE:

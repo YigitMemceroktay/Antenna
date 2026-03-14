@@ -1,14 +1,19 @@
 """
-train_resunet_big_v5.py  —  BigResUNet v5 (= Big v4 + ReduceLROnPlateau)
+train_resunet_big_v6.py  —  BigResUNet v6 (= Big v4 + Optuna HPO hyperparameters)
 
-Big v4 had large val loss spikes due to CosineAnnealingLR being blind to training dynamics.
-Fix: replace with ReduceLROnPlateau (factor=0.5, patience=15) → LR halves when val plateaus.
+Big v4 = SmoothResUNet1D + CosineAnnealingLR + early stopping.
+Big v6 keeps the same v4 architecture/scheduler but applies HPO-tuned hyperparameters
+found by hpo_resunet.py (50 trials, 150 epochs each, best val=0.02671):
+  lr=6.16e-4, weight_decay=1.89e-5, batch_size=16
+  w_ri=0.248, w_slope=0.0017, w_curv=0.019, w_passivity=0.199
+
+Key insight: w_slope≈0 (was 0.10), lr is the most impactful param (42% importance).
 
 COMPARISON TABLE:
-  Model   scheduler             early_stop  best_val
-  Big v2  CosineAnnealing(300)  NO          0.0307
-  Big v4  CosineAnnealing(500)  YES(p=40)   0.0296
-  Big v5  ReduceLROnPlateau     YES(p=40)   ?       ← this file
+  Model   scheduler              early_stop  best_val
+  Big v2  CosineAnnealing(300)   NO          0.0307
+  Big v4  CosineAnnealing(500)   YES(p=40)   0.0296  ← base
+  Big v6  CosineAnnealing(500)   YES(p=40)   ?       ← v4 + HPO params (this file)
 """
 
 from __future__ import annotations
@@ -341,9 +346,7 @@ def train(args: argparse.Namespace) -> None:
     print(f"Device: {device}  |  fixed sigma: {sigma_fixed:.3f}")
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=args.lr_patience, min_lr=1e-6
-    )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
     best_val      = float("inf")
     best_state    = None
@@ -369,9 +372,9 @@ def train(args: argparse.Namespace) -> None:
             optimizer.step()
             losses.append(loss.item())
 
+        scheduler.step()
         train_loss = float(np.mean(losses))
         val_loss   = evaluate(model, val_loader, device, args)
-        scheduler.step(val_loss)
         history.append({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss})
 
         if val_loss < best_val:
@@ -382,8 +385,7 @@ def train(args: argparse.Namespace) -> None:
             patience_ctr += 1
 
         if epoch % args.log_every == 0 or epoch == 1:
-            current_lr = optimizer.param_groups[0]["lr"]
-            print(f"epoch={epoch:4d}  train={train_loss:.6f}  val={val_loss:.6f}  lr={current_lr:.2e}  patience={patience_ctr}/{args.patience}")
+            print(f"epoch={epoch:4d}  train={train_loss:.6f}  val={val_loss:.6f}  patience={patience_ctr}/{args.patience}")
 
         if patience_ctr >= args.patience:
             print(f"\nEarly stopping at epoch {epoch} (patience={args.patience}). Best val: {best_val:.6f}")
@@ -410,7 +412,7 @@ def train(args: argparse.Namespace) -> None:
         "dataset": args.dataset,
         "base_channels": args.base_channels,
         "trainable_params": n_params,
-        "motivation": "Big v2 (SmoothResUNet1D) + early stopping (patience=40). Identical architecture.",
+        "motivation": "Big v6: v4 (CosineAnnealingLR + early stopping) + Optuna HPO hyperparameters.",
         "stopped_epoch": stopped_epoch,
         "loss_weights": {
             "w_ri":        args.w_ri,
@@ -442,32 +444,33 @@ def train(args: argparse.Namespace) -> None:
 # ---------------------------------------------------------------------------
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train BigResUNet v5 — Big v4 + ReduceLROnPlateau")
+    parser = argparse.ArgumentParser(description="Train BigResUNet v6 — Big v4 + HPO hyperparameters")
     parser.add_argument("--project-root",  type=str,   default=".")
     parser.add_argument("--dataset",       type=str,   default="old_excel", choices=["old_excel", "lhs"])
     parser.add_argument("--output-dir",    type=str,   default="NNModel")
-    parser.add_argument("--model-name",    type=str,   default="trained_model_resunet_v5.pt")
-    parser.add_argument("--scaler-name",   type=str,   default="scaler_resunet_v5.gz")
-    parser.add_argument("--history-name",  type=str,   default="history_resunet_v5.csv")
-    parser.add_argument("--meta-name",     type=str,   default="meta_resunet_v5.json")
+    parser.add_argument("--model-name",    type=str,   default="trained_model_resunet_v6.pt")
+    parser.add_argument("--scaler-name",   type=str,   default="scaler_resunet_v6.gz")
+    parser.add_argument("--history-name",  type=str,   default="history_resunet_v6.csv")
+    parser.add_argument("--meta-name",     type=str,   default="meta_resunet_v6.json")
 
     parser.add_argument("--epochs",        type=int,   default=500)
     parser.add_argument("--patience",      type=int,   default=40)
-    parser.add_argument("--lr-patience",   type=int,   default=15)
-    parser.add_argument("--batch-size",    type=int,   default=32)
-    parser.add_argument("--lr",            type=float, default=8e-4)
-    parser.add_argument("--weight-decay",  type=float, default=1e-4)
+    # HPO-tuned training params (batch=16 vs v4's 32, lr=6.16e-4 vs 8e-4, wd smaller)
+    parser.add_argument("--batch-size",    type=int,   default=16)
+    parser.add_argument("--lr",            type=float, default=6.16e-4)
+    parser.add_argument("--weight-decay",  type=float, default=1.887e-5)
     parser.add_argument("--val-ratio",     type=float, default=0.2)
     parser.add_argument("--seed",          type=int,   default=42)
     parser.add_argument("--base-channels", type=int,   default=128)
     parser.add_argument("--smooth-filter", type=int,   default=41)
 
-    parser.add_argument("--w-ri",          type=float, default=0.20)
-    parser.add_argument("--w-mag",         type=float, default=1.00)   # magnitude RSE
+    # HPO-tuned loss weights (w_mag=1.0 reference; w_slope≈0 is key finding)
+    parser.add_argument("--w-ri",          type=float, default=0.2482)
+    parser.add_argument("--w-mag",         type=float, default=1.00)
     parser.add_argument("--mag-eps",       type=float, default=1e-4)
-    parser.add_argument("--w-slope",       type=float, default=0.10)
-    parser.add_argument("--w-curv",        type=float, default=0.03)
-    parser.add_argument("--w-passivity",   type=float, default=0.05)
+    parser.add_argument("--w-slope",       type=float, default=0.0017)
+    parser.add_argument("--w-curv",        type=float, default=0.01856)
+    parser.add_argument("--w-passivity",   type=float, default=0.19933)
 
     parser.add_argument("--log-every",     type=int,   default=10)
     parser.add_argument("--cpu",           action="store_true")
