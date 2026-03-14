@@ -1,0 +1,26 @@
+{
+  "model": "SmoothResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "trainable_params": 3035650,
+  "motivation": "Big v7: v6 (CosineAnnealingLR + early stopping + HPO params) + hybrid loss: magnitude-RSE (v2+ strength) + dB-RSE (v1 strength).",
+  "stopped_epoch": 282,
+  "loss_weights": {
+    "w_ri": 0.2482,
+    "w_mag": 1.0,
+    "mag_loss": "magnitude RSE",
+    "w_mag_db": 0.2,
+    "db_loss": "dB RSE",
+    "w_slope": 0.0017,
+    "w_curv": 0.01856,
+    "w_passivity": 0.19933
+  },
+  "smooth_filter_size": 41,
+  "fixed_sigma": 1.5270000128282595,
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.05483274803393417,
+  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_v7.pt",
+  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_v7.gz"
+}
