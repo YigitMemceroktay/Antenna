@@ -9,7 +9,7 @@ Compares models side by side on the same sample:
   5. BigResUNet v1      (base_ch=128, dB RSE loss, 300 epochs)
   6. BigResUNet v2      (base_ch=128, magnitude RSE loss + fixed smooth, 300 epochs)
   7. BigResUNet v4      (v2 + early stopping, stopped ep 368)
-  8. BigResUNet v5      (v4 + ReduceLROnPlateau)
+  8. BigResUNet v6      (v4 + ReduceLROnPlateau + HPO hyperparameters)
 
 Run:
     python3 -m streamlit run updates/compare_all_models_app.py
@@ -122,11 +122,7 @@ def compute_dataset_stats(
             m = SmallResUNet1DV2(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Big v1":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name == "Big v2":
-            m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name == "Big v4":
-            m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name == "Big v5":
+        elif model_name in ("Big v2", "Big v4", "Big v6"):
             m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         else:
             return {}
@@ -278,7 +274,7 @@ def load_v4_resunet(model_path: str, scaler_path: str, target_len: int):
 
 
 @st.cache_resource
-def load_v5_resunet(model_path: str, scaler_path: str, target_len: int):
+def load_v6_resunet(model_path: str, scaler_path: str, target_len: int):
     scaler = joblib.load(PROJECT_ROOT / scaler_path)
     model  = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
     model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
@@ -341,8 +337,8 @@ def main() -> None:
         big2_scaler_path  = st.text_input("Big v2 scaler",  value="NNModel/scaler_resunet_smooth.gz")
         big4_model_path   = st.text_input("Big v4 model",   value="NNModel/trained_model_resunet_v4.pt")
         big4_scaler_path  = st.text_input("Big v4 scaler",  value="NNModel/scaler_resunet_v4.gz")
-        big5_model_path   = st.text_input("Big v5 model",   value="NNModel/trained_model_resunet_v5.pt")
-        big5_scaler_path  = st.text_input("Big v5 scaler",  value="NNModel/scaler_resunet_v5.gz")
+        big6_model_path   = st.text_input("Big v6 model",   value="NNModel/trained_model_resunet_v6.pt")
+        big6_scaler_path  = st.text_input("Big v6 scaler",  value="NNModel/scaler_resunet_v6.gz")
 
     # ---- Load data ----
     if dataset == "lhs":
@@ -402,10 +398,10 @@ def main() -> None:
         big4_model = None
 
     try:
-        big5_model, big5_scaler = load_v5_resunet(big5_model_path, big5_scaler_path, target_len)
+        big6_model, big6_scaler = load_v6_resunet(big6_model_path, big6_scaler_path, target_len)
     except Exception as e:
-        st.warning(f"Big v5 could not be loaded: {e}")
-        big5_model = None
+        st.warning(f"Big v6 could not be loaded: {e}")
+        big6_model = None
 
     # ---- Predictions ----
     def get_curve(model, scaler):
@@ -420,7 +416,7 @@ def main() -> None:
     real_big,  imag_big  = get_curve(big_model,  big_scaler)
     real_big2, imag_big2 = get_curve(big2_model, big2_scaler)
     real_big4, imag_big4 = get_curve(big4_model, big4_scaler)
-    real_big5, imag_big5 = get_curve(big5_model, big5_scaler)
+    real_big6, imag_big6 = get_curve(big6_model, big6_scaler)
 
     # ---- Convert to display space ----
     def display(real, imag):
@@ -441,7 +437,7 @@ def main() -> None:
     y_big  = smooth(display(real_big,  imag_big))
     y_big2 = smooth(display(real_big2, imag_big2))
     y_big4 = smooth(display(real_big4, imag_big4))
-    y_big5 = smooth(display(real_big5, imag_big5))
+    y_big6 = smooth(display(real_big6, imag_big6))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -467,10 +463,10 @@ def main() -> None:
     big_m  = metrics_row(real_big,  imag_big,  "Big v1")
     big2_m = metrics_row(real_big2, imag_big2, "Big v2")
     big4_m = metrics_row(real_big4, imag_big4, "Big v4")
-    big5_m = metrics_row(real_big5, imag_big5, "Big v5")
+    big6_m = metrics_row(real_big6, imag_big6, "Big v6")
 
-    _model_labels   = ["Antenna NN", "DualResUNet", "Small v2", "Big v1", "Big v2", "Big v4", "Big v5"]
-    _metrics_list   = [ant_m, dual_m, sml2_m, big_m, big2_m, big4_m, big5_m]
+    _model_labels   = ["Antenna NN", "DualResUNet", "Small v2", "Big v1", "Big v2", "Big v4", "Big v6"]
+    _metrics_list   = [ant_m, dual_m, sml2_m, big_m, big2_m, big4_m, big6_m]
     n_cols = 1 + len(_model_labels)
     row1 = st.columns(n_cols)
     row2 = st.columns(n_cols)
@@ -503,8 +499,8 @@ def main() -> None:
     if y_big4 is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_big4, mode="lines", name="Big v4 (v2 + early stopping, ep=368)",
                                  line=dict(width=2, dash="longdashdot", color="teal")))
-    if y_big5 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big5, mode="lines", name="Big v5 (v4 + ReduceLROnPlateau)",
+    if y_big6 is not None:
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big6, mode="lines", name="Big v6 (v4 + HPO params)",
                                  line=dict(width=2, dash="dot", color="mediumseagreen")))
 
     fig.update_layout(
@@ -523,15 +519,15 @@ def main() -> None:
     # ---- Model info ----
     with st.expander("Model info"):
         st.markdown("""
-| Model | base_ch | Params | Loss terms | Epochs |
-|-------|---------|--------|------------|--------|
+| Model | base_ch | Params | Notes | Epochs |
+|-------|---------|--------|-------|--------|
 | Antenna NN | — | ~small | MSE | — |
-| DualResUNet | 64 | ~1.5M | 6 (ri, mag_db, slope, curv, passivity, hilbert) | 300 |
-| Small v2 | 48 | ~450k | 5 (ri, mag_db, slope, curv, passivity) | 250 |
-| Big v1 | 128 | ~6M | 5 (ri, **dB RSE**, slope, curv, passivity) | 300 |
-| Big v2 | 128 | ~6M | 5 (ri, **mag RSE**, slope, curv, passivity) + fixed smooth (σ=1.527) | 300 |
-| Big v4 | 128 | ~6M | identical to v2 + **early stopping** (patience=40, stopped ep 368) | 368 |
-| Big v5 | 128 | ~6M | v4 + **ReduceLROnPlateau** (factor=0.5, lr_patience=15) | — |
+| DualResUNet | 64 | ~1.5M | 6-term loss | 300 |
+| Small v2 | 48 | ~450k | 5-term loss | 250 |
+| Big v1 | 128 | ~6M | dB RSE loss | 300 |
+| Big v2 | 128 | ~6M | mag RSE + fixed smooth (σ=1.527) | 300 |
+| Big v4 | 128 | ~6M | v2 + early stopping (patience=40, stopped ep 368) | 368 |
+| Big v6 | 128 | ~6M | v4 + ReduceLROnPlateau + HPO (lr=6.16e-4, batch=16, w_ri=0.248, w_slope≈0, w_pass=0.199) | — |
         """)
 
     # ---- Dataset-wide statistics ----
@@ -572,7 +568,7 @@ def main() -> None:
         "Big v1":      (big_model_path,  big_scaler_path),
         "Big v2":      (big2_model_path, big2_scaler_path),
         "Big v4":      (big4_model_path, big4_scaler_path),
-        "Big v5":      (big5_model_path, big5_scaler_path),
+        "Big v6":      (big6_model_path, big6_scaler_path),
     }
 
     all_stats = {}
@@ -623,7 +619,7 @@ def main() -> None:
             "Big v1": "purple",
             "Big v2": "deeppink",
             "Big v4": "teal",
-            "Big v5": "mediumseagreen",
+            "Big v6": "mediumseagreen",
         }
         fig3 = go.Figure()
         for name, stats in all_stats.items():
@@ -699,7 +695,7 @@ def main() -> None:
                     "Big v1": (big_model, big_scaler),
                     "Big v2": (big2_model, big2_scaler),
                     "Big v4": (big4_model, big4_scaler),
-                    "Big v5": (big5_model, big5_scaler),
+                    "Big v6": (big6_model, big6_scaler),
                 }
                 m_obj, m_scaler = model_map.get(worst_model, (None, None))
                 if m_obj is not None:
@@ -730,7 +726,7 @@ def main() -> None:
         "Big v1":       PROJECT_ROOT / "NNModel" / "history_resunet_big.csv",
         "Big v2":       PROJECT_ROOT / "NNModel" / "history_resunet_smooth.csv",
         "Big v4":       PROJECT_ROOT / "NNModel" / "history_resunet_v4.csv",
-        "Big v5":       PROJECT_ROOT / "NNModel" / "history_resunet_v5.csv",
+        "Big v6":       PROJECT_ROOT / "NNModel" / "history_resunet_v6.csv",
     }
 
     available = {name: path for name, path in history_files.items() if path.exists()}
@@ -743,7 +739,7 @@ def main() -> None:
             default=list(available.keys()),
         )
 
-        colors = {"DualResUNet": "firebrick", "Small v2": "darkorange", "Big v1": "purple", "Big v2": "deeppink", "Big v4": "teal", "Big v5": "mediumseagreen"}
+        colors = {"DualResUNet": "firebrick", "Small v2": "darkorange", "Big v1": "purple", "Big v2": "deeppink", "Big v4": "teal", "Big v6": "mediumseagreen"}
         fig2 = go.Figure()
 
         for name in selected_histories:
