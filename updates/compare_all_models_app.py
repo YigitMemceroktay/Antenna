@@ -3,17 +3,18 @@ compare_all_models_app.py
 
 Compares models side by side on the same sample:
   1. Real data (ground truth)
-  2. Antenna NN         (benchmark)
-  3. DualResUNet        (base_ch=64, 6-term loss, 300 epochs)
-  4. SmallResUNet v2    (base_ch=48, 5-term loss, 250 epochs)
-  5. BigResUNet v1      (base_ch=128, dB RSE loss, 300 epochs)
-  6. BigResUNet v2      (base_ch=128, magnitude RSE loss + fixed smooth, 300 epochs)
-  7. BigResUNet v4      (v2 + early stopping, stopped ep 368)
-  8. BigResUNet v6      (v4 + ReduceLROnPlateau + HPO hyperparameters)
-  9. BigResUNet v7      (v6 + hybrid mag-RSE + dB-RSE loss)
+  2. Antenna NN    (benchmark)
+  3. BigResUNet v1 (base_ch=128, dB RSE loss)
+  4. BigResUNet v2 (base_ch=128, mag RSE + fixed smooth)
+  5. BigResUNet v4 (v2 + early stopping)
+  6. BigResUNet v1.2 (v1 + w_mag_db=3.0)
+  7. BigResUNet v9  (SmoothResUNet1D + AntennaNN Huber loss)  ← best
+
+Default test dataset: NewData/ (18 seeds × n=50, LHS-sampled)
+LHS (old data/LHS/) and old_excel also available for comparison.
 
 Run:
-    python3 -m streamlit run updates/compare_all_models_app.py
+    python -m streamlit run updates/compare_all_models_app.py
 """
 
 from __future__ import annotations
@@ -37,9 +38,7 @@ if str(THIS_DIR) not in sys.path:
     sys.path.append(str(THIS_DIR))
 
 from compare_antenna_vs_tcnn_sdd11 import AntennaNeuralNet
-from train_resunet_dual import DualResUNet1D, INPUT_COLUMNS
-from train_resunet_small_v2 import SmallResUNet1DV2
-from train_resunet_big import BigResUNet1D
+from train_resunet_big import BigResUNet1D, INPUT_COLUMNS
 from train_resunet_big_v2 import SmoothResUNet1D
 
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
@@ -117,15 +116,11 @@ def compute_dataset_stats(
         scaler = joblib.load(PROJECT_ROOT / scaler_path)
         if model_name == "Antenna NN":
             m = AntennaNeuralNet()
-        elif model_name == "DualResUNet":
-            m = DualResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name == "Small v2":
-            m = SmallResUNet1DV2(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Big v1":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name in ("Big v2", "Big v4", "Big v6", "Big v7"):
+        elif model_name in ("Big v2", "Big v4", "Big v9"):
             m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name in ("Big v1.1", "Big v1.2"):
+        elif model_name == "Big v1.2":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         else:
             return {}
@@ -164,7 +159,56 @@ def compute_dataset_stats(
 
 
 # ---------------------------------------------------------------------------
-# Cached loaders
+# Cached loaders — NewData (primary test set)
+# ---------------------------------------------------------------------------
+
+@st.cache_data
+def list_new_data_files() -> list[Path]:
+    return sorted((PROJECT_ROOT / "NewData" / "inputs").glob("inputs_LHS_n50_seed*.csv"))
+
+
+@st.cache_data
+def load_new_data_seed(input_file: str):
+    p    = Path(input_file)
+    seed = p.stem.split("seed")[-1]                      # e.g. "000"
+    x_df = pd.read_csv(p)[INPUT_COLUMNS]
+    real = pd.read_csv(PROJECT_ROOT / "NewData" / "reals"     / f"real_LHS_n50_seed{seed}.csv").values.astype(np.float32)
+    imag = pd.read_csv(PROJECT_ROOT / "NewData" / "imaginary" / f"imag_LHS_n50_seed{seed}.csv").values.astype(np.float32)
+    n    = min(len(x_df), len(real), len(imag))
+    return x_df.iloc[:n].copy(), real[:n], imag[:n], seed
+
+
+@st.cache_data
+def load_all_new_data():
+    """Concatenate all 18 NewData seeds into a single dataset."""
+    files = sorted((PROJECT_ROOT / "NewData" / "inputs").glob("inputs_LHS_n50_seed*.csv"))
+    df_parts, x_parts, real_parts, imag_parts = [], [], [], []
+    for p in files:
+        seed = p.stem.split("seed")[-1]
+        real_path = PROJECT_ROOT / "NewData" / "reals"     / f"real_LHS_n50_seed{seed}.csv"
+        imag_path = PROJECT_ROOT / "NewData" / "imaginary" / f"imag_LHS_n50_seed{seed}.csv"
+        if not (real_path.exists() and imag_path.exists()):
+            continue
+        x_df_s = pd.read_csv(p)[INPUT_COLUMNS]
+        real   = pd.read_csv(real_path).values.astype(np.float32)
+        imag   = pd.read_csv(imag_path).values.astype(np.float32)
+        n = min(len(x_df_s), len(real), len(imag))
+        df_parts.append(x_df_s.iloc[:n])
+        x_parts.append(x_df_s.values[:n].astype(np.float32))
+        real_parts.append(real[:n])
+        imag_parts.append(imag[:n])
+    if not x_parts:
+        return None, None, None, None
+    return (
+        pd.concat(df_parts, ignore_index=True),
+        np.concatenate(x_parts,    axis=0),
+        np.concatenate(real_parts, axis=0),
+        np.concatenate(imag_parts, axis=0),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cached loaders — Old LHS (data/LHS/)
 # ---------------------------------------------------------------------------
 
 @st.cache_data
@@ -181,16 +225,6 @@ def load_lhs_seed(input_file: str):
     real = pd.read_csv(lhs / f"real_initial_LHS_n20_rounded_seed{seed}.csv").values.astype(np.float32)
     imag = pd.read_csv(lhs / f"imag_initial_LHS_n20_rounded_seed{seed}.csv").values.astype(np.float32)
     return x_df, real, imag, seed
-
-
-@st.cache_data
-def load_old_excel():
-    old  = PROJECT_ROOT / "old" / "data"
-    x_df = pd.read_excel(old / "input_parameters.xlsx")[INPUT_COLUMNS]
-    real = pd.read_excel(old / "reel.xlsx").values.astype(np.float32)
-    imag = pd.read_excel(old / "imaginary.xlsx").values.astype(np.float32)
-    n = min(len(x_df), len(real), len(imag))
-    return x_df.iloc[:n].copy(), real[:n], imag[:n]
 
 
 @st.cache_data
@@ -223,91 +257,29 @@ def load_all_lhs():
     )
 
 
-@st.cache_resource
-def load_antenna_nn(model_path: str, scaler_path: str):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = AntennaNeuralNet()
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
+@st.cache_data
+def load_old_excel():
+    old  = PROJECT_ROOT / "old" / "data"
+    x_df = pd.read_excel(old / "input_parameters.xlsx")[INPUT_COLUMNS]
+    real = pd.read_excel(old / "reel.xlsx").values.astype(np.float32)
+    imag = pd.read_excel(old / "imaginary.xlsx").values.astype(np.float32)
+    n = min(len(x_df), len(real), len(imag))
+    return x_df.iloc[:n].copy(), real[:n], imag[:n]
 
 
-@st.cache_resource
-def load_dual_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = DualResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
+# ---------------------------------------------------------------------------
+# Cached model loaders
+# ---------------------------------------------------------------------------
 
 @st.cache_resource
-def load_small_resunet_v2(model_path: str, scaler_path: str, target_len: int):
+def load_model(model_path: str, scaler_path: str, model_cls, target_len: int):
     scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = SmallResUNet1DV2(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
-def load_big_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
-def load_smooth_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
-def load_v4_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
-def load_v6_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
-def load_v7_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
-def load_v1_1_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-    model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
-    model.eval()
-    return model, scaler
-
-
-@st.cache_resource
-def load_v1_2_resunet(model_path: str, scaler_path: str, target_len: int):
-    scaler = joblib.load(PROJECT_ROOT / scaler_path)
-    model  = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+    if model_cls == "antenna":
+        model = AntennaNeuralNet()
+    elif model_cls == "big":
+        model = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+    else:
+        model = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
     model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
     model.eval()
     return model, scaler
@@ -331,12 +303,12 @@ def predict(model: torch.nn.Module, scaler, x_row: np.ndarray) -> tuple[np.ndarr
 
 def main() -> None:
     st.set_page_config(page_title="All Models Comparator", layout="wide")
-    st.title("S11 Comparison: Real vs Antenna NN vs DualResUNet vs SmallResUNet v2 vs BigResUNet")
+    st.title("S11 Model Comparison — Antenna NN · Big v1 / v2 / v4 / v1.2 / v9")
 
     # ---- Sidebar ----
     with st.sidebar:
         st.header("Controls")
-        dataset      = st.selectbox("Dataset", ["lhs", "old_excel"], index=0)
+        dataset      = st.selectbox("Dataset", ["new_data", "lhs", "old_excel"], index=0)
         trace_label  = st.selectbox("Trace label", ["S11", "Sdd11"], index=0)
         magnitude_db = st.checkbox("Show magnitude in dB", value=True)
 
@@ -356,29 +328,40 @@ def main() -> None:
         _poly    = smooth_poly
 
         st.subheader("Model paths")
-        ant_model_path   = st.text_input("Antenna NN model",      value="NNModel/trained_model.pt")
-        ant_scaler_path  = st.text_input("Antenna NN scaler",     value="NNModel/scaler.gz")
-        dual_model_path  = st.text_input("DualResUNet model",     value="NNModel/trained_model_resunet_dual.pt")
-        dual_scaler_path = st.text_input("DualResUNet scaler",    value="NNModel/scaler_resunet_dual.gz")
-        sml2_model_path  = st.text_input("SmallResUNet v2 model",  value="NNModel/trained_model_resunet_small_v2.pt")
-        sml2_scaler_path = st.text_input("SmallResUNet v2 scaler", value="NNModel/scaler_resunet_small_v2.gz")
-        big_model_path    = st.text_input("Big v1 model",   value="NNModel/trained_model_resunet_big.pt")
-        big_scaler_path   = st.text_input("Big v1 scaler",  value="NNModel/scaler_resunet_big.gz")
-        big2_model_path   = st.text_input("Big v2 model",   value="NNModel/trained_model_resunet_smooth.pt")
-        big2_scaler_path  = st.text_input("Big v2 scaler",  value="NNModel/scaler_resunet_smooth.gz")
-        big4_model_path   = st.text_input("Big v4 model",   value="NNModel/trained_model_resunet_v4.pt")
-        big4_scaler_path  = st.text_input("Big v4 scaler",  value="NNModel/scaler_resunet_v4.gz")
-        big6_model_path   = st.text_input("Big v6 model",   value="NNModel/trained_model_resunet_v6.pt")
-        big6_scaler_path  = st.text_input("Big v6 scaler",  value="NNModel/scaler_resunet_v6.gz")
-        big7_model_path    = st.text_input("Big v7 model",   value="NNModel/trained_model_resunet_v7.pt")
-        big7_scaler_path   = st.text_input("Big v7 scaler",  value="NNModel/scaler_resunet_v7.gz")
-        big11_model_path   = st.text_input("Big v1.1 model", value="NNModel/trained_model_resunet_v1_1.pt")
-        big11_scaler_path  = st.text_input("Big v1.1 scaler",value="NNModel/scaler_resunet_v1_1.gz")
-        big12_model_path   = st.text_input("Big v1.2 model", value="NNModel/trained_model_resunet_v1_2.pt")
-        big12_scaler_path  = st.text_input("Big v1.2 scaler",value="NNModel/scaler_resunet_v1_2.gz")
+        ant_model_path   = st.text_input("Antenna NN model",  value="NNModel/trained_model.pt")
+        ant_scaler_path  = st.text_input("Antenna NN scaler", value="NNModel/scaler.gz")
+        big_model_path   = st.text_input("Big v1 model",      value="NNModel/trained_model_resunet_big.pt")
+        big_scaler_path  = st.text_input("Big v1 scaler",     value="NNModel/scaler_resunet_big.gz")
+        big2_model_path  = st.text_input("Big v2 model",      value="NNModel/trained_model_resunet_smooth.pt")
+        big2_scaler_path = st.text_input("Big v2 scaler",     value="NNModel/scaler_resunet_smooth.gz")
+        big4_model_path  = st.text_input("Big v4 model",      value="NNModel/trained_model_resunet_v4.pt")
+        big4_scaler_path = st.text_input("Big v4 scaler",     value="NNModel/scaler_resunet_v4.gz")
+        big12_model_path = st.text_input("Big v1.2 model",    value="NNModel/trained_model_resunet_v1_2.pt")
+        big12_scaler_path= st.text_input("Big v1.2 scaler",   value="NNModel/scaler_resunet_v1_2.gz")
+        big9_model_path  = st.text_input("Big v9 model",      value="NNModel/trained_model_resunet_v9.pt")
+        big9_scaler_path = st.text_input("Big v9 scaler",     value="NNModel/scaler_resunet_v9.gz")
 
     # ---- Load data ----
-    if dataset == "lhs":
+    if dataset == "new_data":
+        files = list_new_data_files()
+        if not files:
+            st.error("No NewData files found in NewData/inputs/"); return
+        aggregate_all = st.checkbox("Aggregate all NewData seeds", value=True)
+        if aggregate_all:
+            df_agg, x_agg, real_agg, imag_agg = load_all_new_data()
+            if x_agg is not None:
+                x_df       = df_agg
+                real_all   = real_agg
+                imag_all   = imag_agg
+                dataset_label = "new_data_all_seeds"
+            else:
+                st.error("Could not load NewData."); return
+        else:
+            selected_file = st.selectbox("NewData seed file", [f.name for f in files])
+            fpath = next(f for f in files if f.name == selected_file)
+            x_df, real_all, imag_all, seed = load_new_data_seed(str(fpath))
+            dataset_label = f"new_data_seed{seed}"
+    elif dataset == "lhs":
         files = list_lhs_files()
         if not files:
             st.error("No LHS files found in data/LHS"); return
@@ -398,65 +381,19 @@ def main() -> None:
     target_len = real_true.shape[0]
 
     # ---- Load models ----
-    try:
-        ant_model, ant_scaler = load_antenna_nn(ant_model_path, ant_scaler_path)
-    except Exception as e:
-        st.warning(f"Antenna NN could not be loaded: {e}")
-        ant_model = None
+    def _load(mp, sp, cls):
+        try:
+            return load_model(mp, sp, cls, target_len)
+        except Exception as e:
+            st.warning(f"{mp} could not be loaded: {e}")
+            return None, None
 
-    try:
-        dual_model, dual_scaler = load_dual_resunet(dual_model_path, dual_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"DualResUNet could not be loaded: {e}")
-        dual_model = None
-
-    try:
-        sml2_model, sml2_scaler = load_small_resunet_v2(sml2_model_path, sml2_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"SmallResUNet v2 could not be loaded: {e}")
-        sml2_model = None
-
-    try:
-        big_model, big_scaler = load_big_resunet(big_model_path, big_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"Big v1 could not be loaded: {e}")
-        big_model = None
-
-    try:
-        big2_model, big2_scaler = load_smooth_resunet(big2_model_path, big2_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"Big v2 could not be loaded: {e}")
-        big2_model = None
-
-    try:
-        big4_model, big4_scaler = load_v4_resunet(big4_model_path, big4_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"Big v4 could not be loaded: {e}")
-        big4_model = None
-
-    try:
-        big6_model, big6_scaler = load_v6_resunet(big6_model_path, big6_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"Big v6 could not be loaded: {e}")
-        big6_model = None
-
-    try:
-        big7_model, big7_scaler = load_v7_resunet(big7_model_path, big7_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"Big v7 could not be loaded: {e}")
-        big7_model = None
-
-    try:
-        big11_model, big11_scaler = load_v1_1_resunet(big11_model_path, big11_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"Big v1.1 could not be loaded: {e}")
-        big11_model = None
-
-    try:
-        big12_model, big12_scaler = load_v1_2_resunet(big12_model_path, big12_scaler_path, target_len)
-    except Exception as e:
-        st.warning(f"Big v1.2 could not be loaded: {e}")
-        big12_model = None
+    big_model,   big_scaler   = _load(big_model_path,   big_scaler_path,   "big")
+    big2_model,  big2_scaler  = _load(big2_model_path,  big2_scaler_path,  "smooth")
+    big4_model,  big4_scaler  = _load(big4_model_path,  big4_scaler_path,  "smooth")
+    big12_model, big12_scaler = _load(big12_model_path, big12_scaler_path, "big")
+    big9_model,  big9_scaler  = _load(big9_model_path,  big9_scaler_path,  "smooth")
+    ant_model,   ant_scaler   = _load(ant_model_path,   ant_scaler_path,   "antenna")
 
     # ---- Predictions ----
     def get_curve(model, scaler):
@@ -465,16 +402,12 @@ def main() -> None:
         r, i = predict(model, scaler, x_row)
         return r, i
 
-    real_ant,  imag_ant  = get_curve(ant_model,  ant_scaler)
-    real_dual, imag_dual = get_curve(dual_model, dual_scaler)
-    real_sml2, imag_sml2 = get_curve(sml2_model, sml2_scaler)
-    real_big,  imag_big  = get_curve(big_model,  big_scaler)
-    real_big2, imag_big2 = get_curve(big2_model, big2_scaler)
-    real_big4, imag_big4 = get_curve(big4_model, big4_scaler)
-    real_big6, imag_big6 = get_curve(big6_model, big6_scaler)
-    real_big7,  imag_big7  = get_curve(big7_model,  big7_scaler)
-    real_big11, imag_big11 = get_curve(big11_model, big11_scaler)
+    real_ant,   imag_ant   = get_curve(ant_model,   ant_scaler)
+    real_big,   imag_big   = get_curve(big_model,   big_scaler)
+    real_big2,  imag_big2  = get_curve(big2_model,  big2_scaler)
+    real_big4,  imag_big4  = get_curve(big4_model,  big4_scaler)
     real_big12, imag_big12 = get_curve(big12_model, big12_scaler)
+    real_big9,  imag_big9  = get_curve(big9_model,  big9_scaler)
 
     # ---- Convert to display space ----
     def display(real, imag):
@@ -488,17 +421,13 @@ def main() -> None:
             return None
         return smooth_1d(y, _method, _str, _win, _poly)
 
-    y_true = display(real_true, imag_true)
-    y_ant  = smooth(display(real_ant,  imag_ant))
-    y_dual = smooth(display(real_dual, imag_dual))
-    y_sml2 = smooth(display(real_sml2, imag_sml2))
-    y_big  = smooth(display(real_big,  imag_big))
-    y_big2 = smooth(display(real_big2, imag_big2))
-    y_big4 = smooth(display(real_big4, imag_big4))
-    y_big6 = smooth(display(real_big6, imag_big6))
-    y_big7  = smooth(display(real_big7,  imag_big7))
-    y_big11 = smooth(display(real_big11, imag_big11))
+    y_true  = display(real_true,  imag_true)
+    y_ant   = smooth(display(real_ant,   imag_ant))
+    y_big   = smooth(display(real_big,   imag_big))
+    y_big2  = smooth(display(real_big2,  imag_big2))
+    y_big4  = smooth(display(real_big4,  imag_big4))
     y_big12 = smooth(display(real_big12, imag_big12))
+    y_big9  = smooth(display(real_big9,  imag_big9))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -520,18 +449,15 @@ def main() -> None:
             f"{label} RSE dB": f"{rse_db_val:.6f}",
         }
 
-    ant_m  = metrics_row(real_ant,  imag_ant,  "Antenna NN")
-    dual_m = metrics_row(real_dual, imag_dual, "DualResUNet")
-    big_m  = metrics_row(real_big,  imag_big,  "Big v1")
-    big2_m = metrics_row(real_big2, imag_big2, "Big v2")
-    big4_m = metrics_row(real_big4, imag_big4, "Big v4")
-    big6_m = metrics_row(real_big6, imag_big6, "Big v6")
-    big7_m  = metrics_row(real_big7,  imag_big7,  "Big v7")
-    big11_m = metrics_row(real_big11, imag_big11, "Big v1.1")
+    ant_m   = metrics_row(real_ant,   imag_ant,   "Antenna NN")
+    big_m   = metrics_row(real_big,   imag_big,   "Big v1")
+    big2_m  = metrics_row(real_big2,  imag_big2,  "Big v2")
+    big4_m  = metrics_row(real_big4,  imag_big4,  "Big v4")
     big12_m = metrics_row(real_big12, imag_big12, "Big v1.2")
+    big9_m  = metrics_row(real_big9,  imag_big9,  "Big v9")
 
-    _model_labels = ["Antenna NN", "DualResUNet", "Big v1", "Big v1.1", "Big v1.2", "Big v2", "Big v4", "Big v6", "Big v7"]
-    _metrics_list = [ant_m, dual_m, big_m, big11_m, big12_m, big2_m, big4_m, big6_m, big7_m]
+    _model_labels = ["Antenna NN", "Big v1", "Big v2", "Big v4", "Big v1.2", "Big v9"]
+    _metrics_list = [ant_m, big_m, big2_m, big4_m, big12_m, big9_m]
     n_cols = 1 + len(_model_labels)
     row1 = st.columns(n_cols)
     row2 = st.columns(n_cols)
@@ -550,32 +476,23 @@ def main() -> None:
     fig.add_trace(go.Scatter(x=x_axis, y=y_true, mode="lines", name=f"Real {trace_label}",
                              line=dict(width=3, color="gold")))
     if y_ant is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_ant, mode="lines", name="Antenna NN",
-                                 line=dict(width=2, dash="dash", color="royalblue")))
-    if y_dual is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_dual, mode="lines", name="DualResUNet (base_ch=64)",
-                                 line=dict(width=2, dash="dot", color="firebrick")))
+        fig.add_trace(go.Scatter(x=x_axis, y=y_ant,   mode="lines", name="Antenna NN",
+                                 line=dict(width=2, dash="dash",        color="royalblue")))
     if y_big is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big, mode="lines", name="Big v1 (dB RSE loss)",
-                                 line=dict(width=2, dash="dash", color="purple")))
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big,   mode="lines", name="Big v1",
+                                 line=dict(width=2, dash="dash",        color="purple")))
     if y_big2 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big2, mode="lines", name="Big v2 (mag RSE loss + smooth)",
-                                 line=dict(width=2, dash="dot", color="deeppink")))
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big2,  mode="lines", name="Big v2",
+                                 line=dict(width=2, dash="dot",         color="deeppink")))
     if y_big4 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big4, mode="lines", name="Big v4 (v2 + early stopping, ep=368)",
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big4,  mode="lines", name="Big v4",
                                  line=dict(width=2, dash="longdashdot", color="teal")))
-    if y_big6 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big6, mode="lines", name="Big v6 (v4 + HPO params)",
-                                 line=dict(width=2, dash="dot", color="mediumseagreen")))
-    if y_big7 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big7, mode="lines", name="Big v7 (v6 + hybrid mag+dB RSE)",
-                                 line=dict(width=2, dash="dash", color="darkorange")))
-    if y_big11 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big11, mode="lines", name="Big v1.1 (v1 + weighted dB RSE)",
-                                 line=dict(width=2, dash="dot", color="darkcyan")))
     if y_big12 is not None:
-        fig.add_trace(go.Scatter(x=x_axis, y=y_big12, mode="lines", name="Big v1.2 (v1 + w_mag_db=3.0)",
-                                 line=dict(width=2, dash="longdash", color="tomato")))
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big12, mode="lines", name="Big v1.2",
+                                 line=dict(width=2, dash="longdash",    color="tomato")))
+    if y_big9 is not None:
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big9,  mode="lines", name="Big v9 ★",
+                                 line=dict(width=2.5, dash="solid",     color="darkviolet")))
 
     fig.update_layout(
         title=f"{trace_label} — {dataset_label}, sample {idx}",
@@ -593,32 +510,48 @@ def main() -> None:
     # ---- Model info ----
     with st.expander("Model info"):
         st.markdown("""
-| Model | base_ch | Params | Notes | Epochs |
-|-------|---------|--------|-------|--------|
-| Antenna NN | — | ~small | MSE | — |
-| DualResUNet | 64 | ~1.5M | 6-term loss | 300 |
-| Small v2 | 48 | ~450k | 5-term loss | 250 |
-| Big v1 | 128 | ~6M | dB RSE loss | 300 |
-| Big v2 | 128 | ~6M | mag RSE + fixed smooth (σ=1.527) | 300 |
-| Big v4 | 128 | ~6M | v2 + early stopping (patience=40, stopped ep 368) | 368 |
-| Big v6 | 128 | ~6M | v4 + ReduceLROnPlateau + HPO (lr=6.16e-4, batch=16, w_ri=0.248, w_slope≈0, w_pass=0.199) | — |
-| Big v7 | 128 | ~6M | v6 + hybrid loss: mag-RSE + dB-RSE (w_mag_db=0.2) | 282 |
+| Model | Architecture | Loss | Notes |
+|-------|-------------|------|-------|
+| Antenna NN | MLP | MSE | Benchmark |
+| Big v1 | BigResUNet1D | dB RSE | No smooth layer |
+| Big v2 | SmoothResUNet1D | mag RSE (5-term) | Fixed Gaussian smooth σ=1.527 |
+| Big v4 | SmoothResUNet1D | mag RSE (5-term) | v2 + early stopping |
+| Big v1.2 | BigResUNet1D | dB RSE (w_mag_db=3.0) | v1 + stronger dB weight |
+| Big v9 ★ | SmoothResUNet1D | Huber (R/I + F-FFT + mag) | **Best on NewData RSE-mag** |
         """)
 
     # ---- Dataset-wide statistics ----
     st.subheader("Dataset statistics (all samples)")
     st.caption("Runs inference on the full dataset. First load may take a moment.")
 
-    # Aggregate all LHS seeds option
-    if dataset == "lhs":
-        aggregate_all = st.checkbox("Aggregate all LHS seeds", value=True)
-        if aggregate_all:
-            df_agg, x_agg, real_agg, imag_agg = load_all_lhs()
-            if x_agg is not None:
-                x_df_stat   = df_agg
-                x_all_np    = x_agg
-                real_all_np = real_agg
-                imag_all_np = imag_agg
+    # Aggregate option for new_data and lhs
+    if dataset == "new_data":
+        if not (st.session_state.get("agg_new_data_stats", True)):
+            x_all_np    = x_df.values.astype(np.float32)
+            real_all_np = real_all
+            imag_all_np = imag_all
+            x_df_stat   = x_df
+        else:
+            df_agg2, x_agg2, real_agg2, imag_agg2 = load_all_new_data()
+            if x_agg2 is not None:
+                x_df_stat   = df_agg2
+                x_all_np    = x_agg2
+                real_all_np = real_agg2
+                imag_all_np = imag_agg2
+            else:
+                x_df_stat   = x_df
+                x_all_np    = x_df.values.astype(np.float32)
+                real_all_np = real_all
+                imag_all_np = imag_all
+    elif dataset == "lhs":
+        aggregate_all_lhs = st.checkbox("Aggregate all LHS seeds", value=True)
+        if aggregate_all_lhs:
+            df_agg2, x_agg2, real_agg2, imag_agg2 = load_all_lhs()
+            if x_agg2 is not None:
+                x_df_stat   = df_agg2
+                x_all_np    = x_agg2
+                real_all_np = real_agg2
+                imag_all_np = imag_agg2
             else:
                 st.warning("Could not load all LHS seeds.")
                 x_df_stat   = x_df
@@ -637,15 +570,12 @@ def main() -> None:
         imag_all_np = imag_all
 
     stat_models = {
-        "Antenna NN":  (ant_model_path,  ant_scaler_path),
-        "DualResUNet": (dual_model_path, dual_scaler_path),
-        "Big v1":      (big_model_path,  big_scaler_path),
-        "Big v2":      (big2_model_path, big2_scaler_path),
-        "Big v4":      (big4_model_path, big4_scaler_path),
-        "Big v6":      (big6_model_path, big6_scaler_path),
-        "Big v7":      (big7_model_path,  big7_scaler_path),
-        "Big v1.1":    (big11_model_path, big11_scaler_path),
-        "Big v1.2":    (big12_model_path, big12_scaler_path),
+        "Antenna NN": (ant_model_path,  ant_scaler_path),
+        "Big v1":     (big_model_path,  big_scaler_path),
+        "Big v2":     (big2_model_path, big2_scaler_path),
+        "Big v4":     (big4_model_path, big4_scaler_path),
+        "Big v1.2":   (big12_model_path, big12_scaler_path),
+        "Big v9":     (big9_model_path,  big9_scaler_path),
     }
 
     all_stats = {}
@@ -697,14 +627,11 @@ def main() -> None:
         st.markdown(f"**{rse_label} distribution — boxplot**")
         colors_box = {
             "Antenna NN": "royalblue",
-            "DualResUNet": "firebrick",
-            "Big v1":   "purple",
-            "Big v1.1": "darkcyan",
-            "Big v1.2": "tomato",
-            "Big v2":   "deeppink",
-            "Big v4":   "teal",
-            "Big v6":   "mediumseagreen",
-            "Big v7":   "darkorange",
+            "Big v1":     "purple",
+            "Big v2":     "deeppink",
+            "Big v4":     "teal",
+            "Big v1.2":   "tomato",
+            "Big v9":     "darkviolet",
         }
         fig3 = go.Figure()
         for name, stats in all_stats.items():
@@ -771,18 +698,14 @@ def main() -> None:
                     legendgroup=str(si),
                 ))
 
-                # Run inference for this sample
                 x_row_si = x_df_stat.iloc[si].values.astype(np.float32)
                 model_map = {
-                    "Antenna NN": (ant_model, ant_scaler),
-                    "DualResUNet": (dual_model, dual_scaler),
-                    "Big v1": (big_model, big_scaler),
-                    "Big v2": (big2_model, big2_scaler),
-                    "Big v4": (big4_model, big4_scaler),
-                    "Big v6":   (big6_model,  big6_scaler),
-                    "Big v7":   (big7_model,  big7_scaler),
-                    "Big v1.1": (big11_model, big11_scaler),
-                    "Big v1.2": (big12_model, big12_scaler),
+                    "Antenna NN": (ant_model,   ant_scaler),
+                    "Big v1":     (big_model,   big_scaler),
+                    "Big v2":     (big2_model,  big2_scaler),
+                    "Big v4":     (big4_model,  big4_scaler),
+                    "Big v1.2":   (big12_model, big12_scaler),
+                    "Big v9":     (big9_model,  big9_scaler),
                 }
                 m_obj, m_scaler = model_map.get(worst_model, (None, None))
                 if m_obj is not None:
@@ -808,15 +731,11 @@ def main() -> None:
     st.subheader("Training curves (train vs val loss)")
 
     history_files = {
-        "DualResUNet":  PROJECT_ROOT / "NNModel" / "history_resunet_dual.csv",
-        "Small v2":     PROJECT_ROOT / "NNModel" / "history_resunet_small_v2.csv",
-        "Big v1":       PROJECT_ROOT / "NNModel" / "history_resunet_big.csv",
-        "Big v2":       PROJECT_ROOT / "NNModel" / "history_resunet_smooth.csv",
-        "Big v4":       PROJECT_ROOT / "NNModel" / "history_resunet_v4.csv",
-        "Big v6":       PROJECT_ROOT / "NNModel" / "history_resunet_v6.csv",
-        "Big v7":       PROJECT_ROOT / "NNModel" / "history_resunet_v7.csv",
-        "Big v1.1":     PROJECT_ROOT / "NNModel" / "history_resunet_v1_1.csv",
-        "Big v1.2":     PROJECT_ROOT / "NNModel" / "history_resunet_v1_2.csv",
+        "Big v1":   PROJECT_ROOT / "NNModel" / "history_resunet_big.csv",
+        "Big v2":   PROJECT_ROOT / "NNModel" / "history_resunet_smooth.csv",
+        "Big v4":   PROJECT_ROOT / "NNModel" / "history_resunet_v4.csv",
+        "Big v1.2": PROJECT_ROOT / "NNModel" / "history_resunet_v1_2.csv",
+        "Big v9":   PROJECT_ROOT / "NNModel" / "history_resunet_v9.csv",
     }
 
     available = {name: path for name, path in history_files.items() if path.exists()}
@@ -829,7 +748,13 @@ def main() -> None:
             default=list(available.keys()),
         )
 
-        colors = {"DualResUNet": "firebrick", "Small v2": "slateblue", "Big v1": "purple", "Big v1.1": "darkcyan", "Big v1.2": "tomato", "Big v2": "deeppink", "Big v4": "teal", "Big v6": "mediumseagreen", "Big v7": "darkorange"}
+        colors = {
+            "Big v1":   "purple",
+            "Big v2":   "deeppink",
+            "Big v4":   "teal",
+            "Big v1.2": "tomato",
+            "Big v9":   "darkviolet",
+        }
         fig2 = go.Figure()
 
         for name in selected_histories:
@@ -837,12 +762,12 @@ def main() -> None:
             fig2.add_trace(go.Scatter(
                 x=df["epoch"], y=df["train_loss"],
                 mode="lines", name=f"{name} train",
-                line=dict(color=colors[name], width=2),
+                line=dict(color=colors.get(name, "gray"), width=2),
             ))
             fig2.add_trace(go.Scatter(
                 x=df["epoch"], y=df["val_loss"],
                 mode="lines", name=f"{name} val",
-                line=dict(color=colors[name], width=2, dash="dash"),
+                line=dict(color=colors.get(name, "gray"), width=2, dash="dash"),
             ))
 
         fig2.update_layout(

@@ -1,0 +1,23 @@
+{
+  "model": "BigResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "trainable_params": 3035650,
+  "motivation": "Big v10: v1.2 (BigResUNet1D, no smooth layer, 5-term loss) with dB RSE raised from ^2 to ^4. Large frequency-point errors are penalised disproportionately more than in v1.2; acts as a soft maximum over frequency errors. Gradient clipping (max_norm=5.0) stabilises early training.",
+  "stopped_epoch": 246,
+  "loss_weights": {
+    "w_ri": 0.2,
+    "w_mag_db": 3.0,
+    "db_rse_power": 4,
+    "w_slope": 0.1,
+    "w_curv": 0.03,
+    "w_passivity": 0.05
+  },
+  "grad_clip": 5.0,
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.04724903521127999,
+  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_v10.pt",
+  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_v10.gz"
+}

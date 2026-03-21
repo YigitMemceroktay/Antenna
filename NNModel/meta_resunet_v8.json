@@ -1,0 +1,23 @@
+{
+  "model": "BigResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "trainable_params": 3035650,
+  "motivation": "Big v8: v1.2 (BigResUNet1D + w_mag_db=3.0, 2nd best on NewData) + max-deviation penalty (w_max_dev=0.5). Penalises the single worst frequency-point error per sample.",
+  "stopped_epoch": 472,
+  "loss_weights": {
+    "w_ri": 0.2,
+    "w_mag_db": 3.0,
+    "w_slope": 0.1,
+    "w_curv": 0.03,
+    "w_passivity": 0.05,
+    "w_max_dev": 0.5,
+    "max_dev_loss": "mean( max_freq( |mag_p - mag_t| / (mag_t + eps) ) )"
+  },
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.4916160712018609,
+  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_v8.pt",
+  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_v8.gz"
+}
