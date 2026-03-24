@@ -1,0 +1,21 @@
+{
+  "model": "BigResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "trainable_params": 3035650,
+  "motivation": "v1.2: v1 + higher dB RSE weight (w_mag_db=3.0 vs v1's 1.0). Stronger dB-scale gradient pushes model harder toward resonance shape accuracy.",
+  "loss_weights": {
+    "w_ri": 0.2,
+    "w_mag_db": 3.0,
+    "db_loss": "flat dB RSE (same as v1, weight increased)",
+    "w_slope": 0.1,
+    "w_curv": 0.03,
+    "w_passivity": 0.05
+  },
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.12572564906440675,
+  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_v1_2.pt",
+  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_v1_2.gz"
+}

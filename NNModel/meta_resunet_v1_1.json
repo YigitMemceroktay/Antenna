@@ -1,0 +1,23 @@
+{
+  "model": "BigResUNet1D",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "trainable_params": 3035650,
+  "motivation": "v1.1: v1 + weighted dB RSE loss. Deep resonance dips (small mag_t) receive higher gradient signal via per-frequency weights = (1/mag_t)^alpha.",
+  "loss_weights": {
+    "w_ri": 0.2,
+    "w_mag_db": 1.0,
+    "db_loss": "weighted dB RSE",
+    "db_weight_alpha": 1.0,
+    "db_weight_max": 10.0,
+    "w_slope": 0.1,
+    "w_curv": 0.03,
+    "w_passivity": 0.05
+  },
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.0405840827152133,
+  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_v1_1.pt",
+  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_v1_1.gz"
+}

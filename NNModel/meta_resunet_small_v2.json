@@ -19,7 +19,7 @@
   "n_samples": 5000,
   "n_train": 4000,
   "n_val": 1000,
-  "best_val_loss": 0.04482033918611705,
-  "model_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\trained_model_resunet_small_v2.pt",
-  "scaler_path": "C:\\Users\\Kerim\\Desktop\\Antenna\\NNModel\\scaler_resunet_small_v2.gz"
+  "best_val_loss": 0.05377827968914062,
+  "model_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/trained_model_resunet_small_v2.pt",
+  "scaler_path": "/Users/kerimkasar/Antenna/Antenna/NNModel/scaler_resunet_small_v2.gz"
 }
