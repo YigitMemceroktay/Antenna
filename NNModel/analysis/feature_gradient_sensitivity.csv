@@ -1,0 +1,12 @@
+feature,mean_abs_grad_db
+length of patch,2.267052759578572
+dielectric constant of substrate,1.2840342165818854
+height of substrate,1.118041517722666
+width of patch,1.0913569891630714
+c_probe,0.8268307738043182
+radius of the probe,0.21964952364489806
+dielectric constant of solder resist layer,0.12345414375191305
+height of solder resist layer,0.09510895031601635
+height of patch,0.0588845257735371
+c_antipad,0.03990110236020824
+c_pad,0.024779574788031885

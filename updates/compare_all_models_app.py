@@ -9,6 +9,7 @@ Compares models side by side on the same sample:
   5. BigResUNet v4 (v2 + early stopping)
   6. BigResUNet v1.2 (v1 + w_mag_db=3.0)
   7. BigResUNet v9  (SmoothResUNet1D + AntennaNN Huber loss)  ← best
+    8. BigResUNet v11 (SmoothResUNet1D + v9 loss + dB deriv + dB top-k)
 
 Default test dataset: NewData/ (18 seeds × n=50, LHS-sampled)
 LHS (old data/LHS/) and old_excel also available for comparison.
@@ -118,7 +119,7 @@ def compute_dataset_stats(
             m = AntennaNeuralNet()
         elif model_name == "Big v1":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name in ("Big v2", "Big v4", "Big v9"):
+        elif model_name in ("Big v2", "Big v4", "Big v9", "Big v11"):
             m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Big v1.2":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
@@ -303,7 +304,7 @@ def predict(model: torch.nn.Module, scaler, x_row: np.ndarray) -> tuple[np.ndarr
 
 def main() -> None:
     st.set_page_config(page_title="All Models Comparator", layout="wide")
-    st.title("S11 Model Comparison — Antenna NN · Big v1 / v2 / v4 / v1.2 / v9")
+    st.title("S11 Model Comparison — Antenna NN · Big v1 / v2 / v4 / v1.2 / v9 / v11")
 
     # ---- Sidebar ----
     with st.sidebar:
@@ -340,6 +341,8 @@ def main() -> None:
         big12_scaler_path= st.text_input("Big v1.2 scaler",   value="NNModel/scaler_resunet_v1_2.gz")
         big9_model_path  = st.text_input("Big v9 model",      value="NNModel/trained_model_resunet_v9.pt")
         big9_scaler_path = st.text_input("Big v9 scaler",     value="NNModel/scaler_resunet_v9.gz")
+        big11_model_path = st.text_input("Big v11 model",     value="NNModel/trained_model_resunet_v11.pt")
+        big11_scaler_path= st.text_input("Big v11 scaler",    value="NNModel/scaler_resunet_v11.gz")
 
     # ---- Load data ----
     if dataset == "new_data":
@@ -393,6 +396,7 @@ def main() -> None:
     big4_model,  big4_scaler  = _load(big4_model_path,  big4_scaler_path,  "smooth")
     big12_model, big12_scaler = _load(big12_model_path, big12_scaler_path, "big")
     big9_model,  big9_scaler  = _load(big9_model_path,  big9_scaler_path,  "smooth")
+    big11_model, big11_scaler = _load(big11_model_path, big11_scaler_path, "smooth")
     ant_model,   ant_scaler   = _load(ant_model_path,   ant_scaler_path,   "antenna")
 
     # ---- Predictions ----
@@ -408,6 +412,7 @@ def main() -> None:
     real_big4,  imag_big4  = get_curve(big4_model,  big4_scaler)
     real_big12, imag_big12 = get_curve(big12_model, big12_scaler)
     real_big9,  imag_big9  = get_curve(big9_model,  big9_scaler)
+    real_big11, imag_big11 = get_curve(big11_model, big11_scaler)
 
     # ---- Convert to display space ----
     def display(real, imag):
@@ -428,6 +433,7 @@ def main() -> None:
     y_big4  = smooth(display(real_big4,  imag_big4))
     y_big12 = smooth(display(real_big12, imag_big12))
     y_big9  = smooth(display(real_big9,  imag_big9))
+    y_big11 = smooth(display(real_big11, imag_big11))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -455,9 +461,10 @@ def main() -> None:
     big4_m  = metrics_row(real_big4,  imag_big4,  "Big v4")
     big12_m = metrics_row(real_big12, imag_big12, "Big v1.2")
     big9_m  = metrics_row(real_big9,  imag_big9,  "Big v9")
+    big11_m = metrics_row(real_big11, imag_big11, "Big v11")
 
-    _model_labels = ["Antenna NN", "Big v1", "Big v2", "Big v4", "Big v1.2", "Big v9"]
-    _metrics_list = [ant_m, big_m, big2_m, big4_m, big12_m, big9_m]
+    _model_labels = ["Antenna NN", "Big v1", "Big v2", "Big v4", "Big v1.2", "Big v9", "Big v11"]
+    _metrics_list = [ant_m, big_m, big2_m, big4_m, big12_m, big9_m, big11_m]
     n_cols = 1 + len(_model_labels)
     row1 = st.columns(n_cols)
     row2 = st.columns(n_cols)
@@ -493,6 +500,9 @@ def main() -> None:
     if y_big9 is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_big9,  mode="lines", name="Big v9 ★",
                                  line=dict(width=2.5, dash="solid",     color="darkviolet")))
+    if y_big11 is not None:
+        fig.add_trace(go.Scatter(x=x_axis, y=y_big11, mode="lines", name="Big v11",
+                                 line=dict(width=2.2, dash="solid", color="firebrick")))
 
     fig.update_layout(
         title=f"{trace_label} — {dataset_label}, sample {idx}",
@@ -518,6 +528,7 @@ def main() -> None:
 | Big v4 | SmoothResUNet1D | mag RSE (5-term) | v2 + early stopping |
 | Big v1.2 | BigResUNet1D | dB RSE (w_mag_db=3.0) | v1 + stronger dB weight |
 | Big v9 ★ | SmoothResUNet1D | Huber (R/I + F-FFT + mag) | **Best on NewData RSE-mag** |
+| Big v11 | SmoothResUNet1D | Huber (R/I + F-FFT + mag + dB d1/d2 + dB top-k) | v9 + dip-shape/top-k emphasis |
         """)
 
     # ---- Dataset-wide statistics ----
@@ -576,6 +587,7 @@ def main() -> None:
         "Big v4":     (big4_model_path, big4_scaler_path),
         "Big v1.2":   (big12_model_path, big12_scaler_path),
         "Big v9":     (big9_model_path,  big9_scaler_path),
+        "Big v11":    (big11_model_path, big11_scaler_path),
     }
 
     all_stats = {}
@@ -632,6 +644,7 @@ def main() -> None:
             "Big v4":     "teal",
             "Big v1.2":   "tomato",
             "Big v9":     "darkviolet",
+            "Big v11":    "firebrick",
         }
         fig3 = go.Figure()
         for name, stats in all_stats.items():
@@ -706,6 +719,7 @@ def main() -> None:
                     "Big v4":     (big4_model,  big4_scaler),
                     "Big v1.2":   (big12_model, big12_scaler),
                     "Big v9":     (big9_model,  big9_scaler),
+                    "Big v11":    (big11_model, big11_scaler),
                 }
                 m_obj, m_scaler = model_map.get(worst_model, (None, None))
                 if m_obj is not None:
@@ -736,6 +750,7 @@ def main() -> None:
         "Big v4":   PROJECT_ROOT / "NNModel" / "history_resunet_v4.csv",
         "Big v1.2": PROJECT_ROOT / "NNModel" / "history_resunet_v1_2.csv",
         "Big v9":   PROJECT_ROOT / "NNModel" / "history_resunet_v9.csv",
+        "Big v11":  PROJECT_ROOT / "NNModel" / "history_resunet_v11.csv",
     }
 
     available = {name: path for name, path in history_files.items() if path.exists()}
@@ -754,6 +769,7 @@ def main() -> None:
             "Big v4":   "teal",
             "Big v1.2": "tomato",
             "Big v9":   "darkviolet",
+            "Big v11":  "firebrick",
         }
         fig2 = go.Figure()
 

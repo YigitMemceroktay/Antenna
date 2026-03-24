@@ -1,0 +1,66 @@
+{
+  "dataset": "old_excel",
+  "n_samples": 5000,
+  "sample_limit_gradient": 256,
+  "baseline_rse": 0.03130977973341942,
+  "top5_permutation": [
+    {
+      "feature": "length of patch",
+      "baseline_rse": 0.03130977973341942,
+      "permuted_rse": 14.077588081359863,
+      "delta_rse": 14.046278301626444
+    },
+    {
+      "feature": "height of substrate",
+      "baseline_rse": 0.03130977973341942,
+      "permuted_rse": 8.490567207336426,
+      "delta_rse": 8.459257427603006
+    },
+    {
+      "feature": "dielectric constant of substrate",
+      "baseline_rse": 0.03130977973341942,
+      "permuted_rse": 5.662084579467773,
+      "delta_rse": 5.630774799734354
+    },
+    {
+      "feature": "width of patch",
+      "baseline_rse": 0.03130977973341942,
+      "permuted_rse": 4.307291507720947,
+      "delta_rse": 4.275981727987528
+    },
+    {
+      "feature": "c_probe",
+      "baseline_rse": 0.03130977973341942,
+      "permuted_rse": 1.6983213424682617,
+      "delta_rse": 1.6670115627348423
+    }
+  ],
+  "top5_gradient": [
+    {
+      "feature": "length of patch",
+      "mean_abs_grad_db": 2.267052759578572
+    },
+    {
+      "feature": "dielectric constant of substrate",
+      "mean_abs_grad_db": 1.2840342165818854
+    },
+    {
+      "feature": "height of substrate",
+      "mean_abs_grad_db": 1.118041517722666
+    },
+    {
+      "feature": "width of patch",
+      "mean_abs_grad_db": 1.0913569891630714
+    },
+    {
+      "feature": "c_probe",
+      "mean_abs_grad_db": 0.8268307738043182
+    }
+  ],
+  "outputs": {
+    "feature_permutation_importance": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\analysis\\feature_permutation_importance.csv",
+    "feature_gradient_sensitivity": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\analysis\\feature_gradient_sensitivity.csv",
+    "feature_frequency_sensitivity": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\analysis\\feature_frequency_sensitivity.csv",
+    "frequency_error_profile": "C:\\Users\\yigit\\OneDrive\\Belgeler\\smgp\\NNModel\\analysis\\frequency_error_profile.csv"
+  }
+}
