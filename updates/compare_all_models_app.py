@@ -8,7 +8,8 @@ Compares models side by side on the same sample:
   4. BigResUNet v2 (base_ch=128, mag RSE + fixed smooth)
   5. BigResUNet v4 (v2 + early stopping)
   6. BigResUNet v1.2 (v1 + w_mag_db=3.0)
-  7. BigResUNet v9  (SmoothResUNet1D + AntennaNN Huber loss)  ← best
+  7. BigResUNet v9  (SmoothResUNet1D + AntennaNN Huber loss)  ← best ResUNet
+  8. CrossAttn Transformer (cross-attention, explainability)
 
 Default test dataset: NewData/ (18 seeds × n=50, LHS-sampled)
 LHS (old data/LHS/) and old_excel also available for comparison.
@@ -40,6 +41,7 @@ if str(THIS_DIR) not in sys.path:
 from compare_antenna_vs_tcnn_sdd11 import AntennaNeuralNet
 from train_resunet_big import BigResUNet1D, INPUT_COLUMNS
 from train_resunet_big_v2 import SmoothResUNet1D
+from train_transformer_crossattn import CrossAttnTransformer
 
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
@@ -122,6 +124,8 @@ def compute_dataset_stats(
             m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Big v1.2":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+        elif model_name == "CrossAttn":
+            m = CrossAttnTransformer(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         else:
             return {}
         m.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
@@ -278,6 +282,8 @@ def load_model(model_path: str, scaler_path: str, model_cls, target_len: int):
         model = AntennaNeuralNet()
     elif model_cls == "big":
         model = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
+    elif model_cls == "crossattn":
+        model = CrossAttnTransformer(input_dim=len(INPUT_COLUMNS), target_len=target_len)
     else:
         model = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
     model.load_state_dict(torch.load(PROJECT_ROOT / model_path, map_location="cpu"))
@@ -303,7 +309,7 @@ def predict(model: torch.nn.Module, scaler, x_row: np.ndarray) -> tuple[np.ndarr
 
 def main() -> None:
     st.set_page_config(page_title="All Models Comparator", layout="wide")
-    st.title("S11 Model Comparison — Antenna NN · Big v1 / v2 / v4 / v1.2 / v9")
+    st.title("S11 Model Comparison — Antenna NN · Big v1 / v2 / v4 / v1.2 / v9 · CrossAttn")
 
     # ---- Sidebar ----
     with st.sidebar:
@@ -340,6 +346,8 @@ def main() -> None:
         big12_scaler_path= st.text_input("Big v1.2 scaler",   value="NNModel/scaler_resunet_v1_2.gz")
         big9_model_path  = st.text_input("Big v9 model",      value="NNModel/trained_model_resunet_v9.pt")
         big9_scaler_path = st.text_input("Big v9 scaler",     value="NNModel/scaler_resunet_v9.gz")
+        cattn_model_path  = st.text_input("CrossAttn model",  value="NNModel/trained_model_transformer_crossattn.pt")
+        cattn_scaler_path = st.text_input("CrossAttn scaler", value="NNModel/scaler_transformer_crossattn.gz")
 
     # ---- Load data ----
     if dataset == "new_data":
@@ -394,6 +402,7 @@ def main() -> None:
     big12_model, big12_scaler = _load(big12_model_path, big12_scaler_path, "big")
     big9_model,  big9_scaler  = _load(big9_model_path,  big9_scaler_path,  "smooth")
     ant_model,   ant_scaler   = _load(ant_model_path,   ant_scaler_path,   "antenna")
+    cattn_model, cattn_scaler = _load(cattn_model_path, cattn_scaler_path, "crossattn")
 
     # ---- Predictions ----
     def get_curve(model, scaler):
@@ -408,6 +417,7 @@ def main() -> None:
     real_big4,  imag_big4  = get_curve(big4_model,  big4_scaler)
     real_big12, imag_big12 = get_curve(big12_model, big12_scaler)
     real_big9,  imag_big9  = get_curve(big9_model,  big9_scaler)
+    real_cattn, imag_cattn = get_curve(cattn_model, cattn_scaler)
 
     # ---- Convert to display space ----
     def display(real, imag):
@@ -428,6 +438,7 @@ def main() -> None:
     y_big4  = smooth(display(real_big4,  imag_big4))
     y_big12 = smooth(display(real_big12, imag_big12))
     y_big9  = smooth(display(real_big9,  imag_big9))
+    y_cattn = smooth(display(real_cattn, imag_cattn))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -455,9 +466,10 @@ def main() -> None:
     big4_m  = metrics_row(real_big4,  imag_big4,  "Big v4")
     big12_m = metrics_row(real_big12, imag_big12, "Big v1.2")
     big9_m  = metrics_row(real_big9,  imag_big9,  "Big v9")
+    cattn_m = metrics_row(real_cattn, imag_cattn, "CrossAttn")
 
-    _model_labels = ["Antenna NN", "Big v1", "Big v2", "Big v4", "Big v1.2", "Big v9"]
-    _metrics_list = [ant_m, big_m, big2_m, big4_m, big12_m, big9_m]
+    _model_labels = ["Antenna NN", "Big v1", "Big v2", "Big v4", "Big v1.2", "Big v9", "CrossAttn"]
+    _metrics_list = [ant_m, big_m, big2_m, big4_m, big12_m, big9_m, cattn_m]
     n_cols = 1 + len(_model_labels)
     row1 = st.columns(n_cols)
     row2 = st.columns(n_cols)
@@ -493,6 +505,9 @@ def main() -> None:
     if y_big9 is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_big9,  mode="lines", name="Big v9 ★",
                                  line=dict(width=2.5, dash="solid",     color="darkviolet")))
+    if y_cattn is not None:
+        fig.add_trace(go.Scatter(x=x_axis, y=y_cattn, mode="lines", name="CrossAttn",
+                                 line=dict(width=2,   dash="dashdot",   color="darkorange")))
 
     fig.update_layout(
         title=f"{trace_label} — {dataset_label}, sample {idx}",
@@ -518,6 +533,7 @@ def main() -> None:
 | Big v4 | SmoothResUNet1D | mag RSE (5-term) | v2 + early stopping |
 | Big v1.2 | BigResUNet1D | dB RSE (w_mag_db=3.0) | v1 + stronger dB weight |
 | Big v9 ★ | SmoothResUNet1D | Huber (R/I + F-FFT + mag) | **Best on NewData RSE-mag** |
+| CrossAttn | CrossAttnTransformer | Huber (R/I + F-FFT + mag) | Attention map shows param importance per frequency |
         """)
 
     # ---- Dataset-wide statistics ----
@@ -576,6 +592,7 @@ def main() -> None:
         "Big v4":     (big4_model_path, big4_scaler_path),
         "Big v1.2":   (big12_model_path, big12_scaler_path),
         "Big v9":     (big9_model_path,  big9_scaler_path),
+        "CrossAttn":  (cattn_model_path, cattn_scaler_path),
     }
 
     all_stats = {}
@@ -632,6 +649,7 @@ def main() -> None:
             "Big v4":     "teal",
             "Big v1.2":   "tomato",
             "Big v9":     "darkviolet",
+            "CrossAttn":  "darkorange",
         }
         fig3 = go.Figure()
         for name, stats in all_stats.items():

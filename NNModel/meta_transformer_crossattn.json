@@ -1,0 +1,27 @@
+{
+  "model": "CrossAttnTransformer",
+  "train_dataset": "old_excel",
+  "test_dataset": "NewData (18 seeds \u00d7 50 = 900 samples)",
+  "n_train": 4000,
+  "n_val": 1000,
+  "n_test": 900,
+  "d_model": 128,
+  "n_heads": 8,
+  "n_layers": 4,
+  "ff_dim": 512,
+  "dropout": 0.1,
+  "trainable_params": 1101058,
+  "stopped_epoch": 66,
+  "best_val_loss": 0.6135996384546161,
+  "val_mse_db": 7.071108102798462,
+  "val_rse_db": 44.49274551868439,
+  "test_mse_db": 7.117613718427461,
+  "test_rse_db": 46.096142012497474,
+  "loss": {
+    "type": "AntennaNN Huber (3 terms)",
+    "beta": 0.1,
+    "alfa": 0.1,
+    "w_filter": 0.05,
+    "wmag": 0.4
+  }
+}
