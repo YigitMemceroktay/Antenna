@@ -10,6 +10,7 @@ Compares models side by side on the same sample:
   6. BigResUNet v1.2 (v1 + w_mag_db=3.0)
   7. BigResUNet v9  (SmoothResUNet1D + AntennaNN Huber loss)  ← best ResUNet
   8. CrossAttn Transformer (cross-attention, explainability)
+  9. BigResUNet v9 HPO (v9 + Optuna hyperparameter tuning)   ← new
 
 Default test dataset: NewData/ (18 seeds × n=50, LHS-sampled)
 LHS (old data/LHS/) and old_excel also available for comparison.
@@ -120,7 +121,7 @@ def compute_dataset_stats(
             m = AntennaNeuralNet()
         elif model_name == "Big v1":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
-        elif model_name in ("Big v2", "Big v4", "Big v9"):
+        elif model_name in ("Big v2", "Big v4", "Big v9", "Big v9 HPO"):
             m = SmoothResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
         elif model_name == "Big v1.2":
             m = BigResUNet1D(input_dim=len(INPUT_COLUMNS), target_len=target_len)
@@ -309,7 +310,7 @@ def predict(model: torch.nn.Module, scaler, x_row: np.ndarray) -> tuple[np.ndarr
 
 def main() -> None:
     st.set_page_config(page_title="All Models Comparator", layout="wide")
-    st.title("S11 Model Comparison — Antenna NN · Big v1 / v2 / v4 / v1.2 / v9 · CrossAttn")
+    st.title("S11 Model Comparison — Antenna NN · Big v1 / v2 / v4 / v1.2 / v9 / v9 HPO · CrossAttn")
 
     # ---- Sidebar ----
     with st.sidebar:
@@ -348,6 +349,8 @@ def main() -> None:
         big9_scaler_path = st.text_input("Big v9 scaler",     value="NNModel/scaler_resunet_v9.gz")
         cattn_model_path  = st.text_input("CrossAttn model",  value="NNModel/trained_model_transformer_crossattn.pt")
         cattn_scaler_path = st.text_input("CrossAttn scaler", value="NNModel/scaler_transformer_crossattn.gz")
+        v9hpo_model_path  = st.text_input("Big v9 HPO model", value="NNModel/trained_model_resunet_v9_hpo.pt")
+        v9hpo_scaler_path = st.text_input("Big v9 HPO scaler",value="NNModel/scaler_resunet_v9_hpo.gz")
 
     # ---- Load data ----
     if dataset == "new_data":
@@ -400,9 +403,10 @@ def main() -> None:
     big2_model,  big2_scaler  = _load(big2_model_path,  big2_scaler_path,  "smooth")
     big4_model,  big4_scaler  = _load(big4_model_path,  big4_scaler_path,  "smooth")
     big12_model, big12_scaler = _load(big12_model_path, big12_scaler_path, "big")
-    big9_model,  big9_scaler  = _load(big9_model_path,  big9_scaler_path,  "smooth")
-    ant_model,   ant_scaler   = _load(ant_model_path,   ant_scaler_path,   "antenna")
-    cattn_model, cattn_scaler = _load(cattn_model_path, cattn_scaler_path, "crossattn")
+    big9_model,   big9_scaler   = _load(big9_model_path,   big9_scaler_path,   "smooth")
+    ant_model,    ant_scaler    = _load(ant_model_path,    ant_scaler_path,    "antenna")
+    cattn_model,  cattn_scaler  = _load(cattn_model_path,  cattn_scaler_path,  "crossattn")
+    v9hpo_model,  v9hpo_scaler  = _load(v9hpo_model_path,  v9hpo_scaler_path,  "smooth")
 
     # ---- Predictions ----
     def get_curve(model, scaler):
@@ -418,6 +422,7 @@ def main() -> None:
     real_big12, imag_big12 = get_curve(big12_model, big12_scaler)
     real_big9,  imag_big9  = get_curve(big9_model,  big9_scaler)
     real_cattn, imag_cattn = get_curve(cattn_model, cattn_scaler)
+    real_v9hpo, imag_v9hpo = get_curve(v9hpo_model, v9hpo_scaler)
 
     # ---- Convert to display space ----
     def display(real, imag):
@@ -439,6 +444,7 @@ def main() -> None:
     y_big12 = smooth(display(real_big12, imag_big12))
     y_big9  = smooth(display(real_big9,  imag_big9))
     y_cattn = smooth(display(real_cattn, imag_cattn))
+    y_v9hpo = smooth(display(real_v9hpo, imag_v9hpo))
     y_label = f"|{trace_label}| (dB)" if magnitude_db else f"|{trace_label}|"
 
     # ---- Metrics ----
@@ -466,10 +472,11 @@ def main() -> None:
     big4_m  = metrics_row(real_big4,  imag_big4,  "Big v4")
     big12_m = metrics_row(real_big12, imag_big12, "Big v1.2")
     big9_m  = metrics_row(real_big9,  imag_big9,  "Big v9")
-    cattn_m = metrics_row(real_cattn, imag_cattn, "CrossAttn")
+    cattn_m  = metrics_row(real_cattn,  imag_cattn,  "CrossAttn")
+    v9hpo_m  = metrics_row(real_v9hpo,  imag_v9hpo,  "Big v9 HPO")
 
-    _model_labels = ["Antenna NN", "Big v1", "Big v2", "Big v4", "Big v1.2", "Big v9", "CrossAttn"]
-    _metrics_list = [ant_m, big_m, big2_m, big4_m, big12_m, big9_m, cattn_m]
+    _model_labels = ["Antenna NN", "Big v1", "Big v2", "Big v4", "Big v1.2", "Big v9", "CrossAttn", "Big v9 HPO"]
+    _metrics_list = [ant_m, big_m, big2_m, big4_m, big12_m, big9_m, cattn_m, v9hpo_m]
     n_cols = 1 + len(_model_labels)
     row1 = st.columns(n_cols)
     row2 = st.columns(n_cols)
@@ -508,6 +515,9 @@ def main() -> None:
     if y_cattn is not None:
         fig.add_trace(go.Scatter(x=x_axis, y=y_cattn, mode="lines", name="CrossAttn",
                                  line=dict(width=2,   dash="dashdot",   color="darkorange")))
+    if y_v9hpo is not None:
+        fig.add_trace(go.Scatter(x=x_axis, y=y_v9hpo, mode="lines", name="Big v9 HPO ★★",
+                                 line=dict(width=2.5, dash="solid",     color="crimson")))
 
     fig.update_layout(
         title=f"{trace_label} — {dataset_label}, sample {idx}",
@@ -534,6 +544,7 @@ def main() -> None:
 | Big v1.2 | BigResUNet1D | dB RSE (w_mag_db=3.0) | v1 + stronger dB weight |
 | Big v9 ★ | SmoothResUNet1D | Huber (R/I + F-FFT + mag) | **Best on NewData RSE-mag** |
 | CrossAttn | CrossAttnTransformer | Huber (R/I + F-FFT + mag) | Attention map shows param importance per frequency |
+| Big v9 HPO ★★ | SmoothResUNet1D | Huber (tuned via Optuna) | v9 + 40-trial TPE search on lr/wd/batch/beta/alfa/w_filter/wmag |
         """)
 
     # ---- Dataset-wide statistics ----
@@ -591,8 +602,9 @@ def main() -> None:
         "Big v2":     (big2_model_path, big2_scaler_path),
         "Big v4":     (big4_model_path, big4_scaler_path),
         "Big v1.2":   (big12_model_path, big12_scaler_path),
-        "Big v9":     (big9_model_path,  big9_scaler_path),
-        "CrossAttn":  (cattn_model_path, cattn_scaler_path),
+        "Big v9":     (big9_model_path,   big9_scaler_path),
+        "CrossAttn":  (cattn_model_path,  cattn_scaler_path),
+        "Big v9 HPO": (v9hpo_model_path,  v9hpo_scaler_path),
     }
 
     all_stats = {}
@@ -650,6 +662,7 @@ def main() -> None:
             "Big v1.2":   "tomato",
             "Big v9":     "darkviolet",
             "CrossAttn":  "darkorange",
+            "Big v9 HPO": "crimson",
         }
         fig3 = go.Figure()
         for name, stats in all_stats.items():
@@ -723,7 +736,8 @@ def main() -> None:
                     "Big v2":     (big2_model,  big2_scaler),
                     "Big v4":     (big4_model,  big4_scaler),
                     "Big v1.2":   (big12_model, big12_scaler),
-                    "Big v9":     (big9_model,  big9_scaler),
+                    "Big v9":     (big9_model,   big9_scaler),
+                    "Big v9 HPO": (v9hpo_model,  v9hpo_scaler),
                 }
                 m_obj, m_scaler = model_map.get(worst_model, (None, None))
                 if m_obj is not None:
@@ -753,7 +767,8 @@ def main() -> None:
         "Big v2":   PROJECT_ROOT / "NNModel" / "history_resunet_smooth.csv",
         "Big v4":   PROJECT_ROOT / "NNModel" / "history_resunet_v4.csv",
         "Big v1.2": PROJECT_ROOT / "NNModel" / "history_resunet_v1_2.csv",
-        "Big v9":   PROJECT_ROOT / "NNModel" / "history_resunet_v9.csv",
+        "Big v9":     PROJECT_ROOT / "NNModel" / "history_resunet_v9.csv",
+        "Big v9 HPO": PROJECT_ROOT / "NNModel" / "history_resunet_v9_hpo.csv",
     }
 
     available = {name: path for name, path in history_files.items() if path.exists()}
@@ -771,7 +786,8 @@ def main() -> None:
             "Big v2":   "deeppink",
             "Big v4":   "teal",
             "Big v1.2": "tomato",
-            "Big v9":   "darkviolet",
+            "Big v9":     "darkviolet",
+            "Big v9 HPO": "crimson",
         }
         fig2 = go.Figure()
 

@@ -1,0 +1,33 @@
+{
+  "model": "SmoothResUNet1D",
+  "variant": "v9_hpo",
+  "dataset": "old_excel",
+  "base_channels": 128,
+  "trainable_params": 3035650,
+  "fixed_sigma": 1.5270000128282595,
+  "motivation": "Big v9 architecture (SmoothResUNet1D) with hyperparameters tuned via Optuna TPE (40 trials x 80 epochs). Same AntennaNN Huber loss. HPO searched: lr, weight_decay, batch_size, beta, alfa, w_filter, wmag.",
+  "hpo": {
+    "n_trials": 40,
+    "epochs_per_trial": 80,
+    "best_trial": 39,
+    "hpo_best_val_loss": 0.005919177376199514
+  },
+  "loss": {
+    "type": "AntennaNN Huber loss",
+    "beta": 0.2999168580492462,
+    "alfa": 0.2283662112870022,
+    "w_filter": 0.010215104235298781,
+    "wmag": 0.5149088475228906,
+    "k_idx": "concat(arange(0,40), arange(161,201))"
+  },
+  "optimizer": {
+    "lr": 0.0007053908935402008,
+    "weight_decay": 4.846472490646443e-05,
+    "batch_size": 32,
+    "scheduler": "CosineAnnealingLR(T_max=300)"
+  },
+  "n_samples": 5000,
+  "n_train": 4000,
+  "n_val": 1000,
+  "best_val_loss": 0.006563170827575959
+}
