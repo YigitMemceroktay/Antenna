@@ -1,0 +1,22 @@
+{
+  "model": "AntennaNeuralNet",
+  "dataset": "old_excel",
+  "trainable_params": 69969,
+  "motivation": "AntennaNN baseline: MLP(11\u219260\u219260\u219260, Tanh) + deconv \u2192 2\u00d7201. Trained with AntennaNN Huber loss.",
+  "stopped_epoch": 114,
+  "loss": {
+    "type": "AntennaNN Huber loss",
+    "beta": 0.1,
+    "alfa": 0.1,
+    "w_filter": 0.05,
+    "wmag": 0.4,
+    "k_idx": "concat(arange(0,40), arange(161,201))"
+  },
+  "n_samples_requested": 100,
+  "n_samples": 5000,
+  "n_train": 80,
+  "n_val": 20,
+  "best_val_loss": 0.43224722146987915,
+  "model_path": "C:\\Users\\emirh\\Desktop\\Antenna_Kerim_Branch\\NNModel\\trained_model_antenna_nn_n100_run1.pt",
+  "scaler_path": "C:\\Users\\emirh\\Desktop\\Antenna_Kerim_Branch\\NNModel\\scaler_antenna_nn_n100_run1.gz"
+}
